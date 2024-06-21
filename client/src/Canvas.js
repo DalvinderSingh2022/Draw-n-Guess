@@ -55,15 +55,9 @@ const Canvas = () => {
     }, [room]);
 
     useEffect(() => {
-        socket.emit("get room");
-    }, [])
-
-    useEffect(() => {
         socket.on("updated room", (room) => {
             setRoom(room);
-            if (room.players[room.turnIndex].id === socket.id) {
-                setTurn(true);
-            }
+            setTurn(room.players[room.turnIndex - 1]?.id === socket.id);
         });
 
         return () => socket.off("updated room");
@@ -71,8 +65,8 @@ const Canvas = () => {
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        // canvas.width = window.innerWidth - 60;
-        // canvas.height = 400;
+        canvas.width = Math.min(940, window.innerWidth - 40);
+        canvas.height = 520;
 
         contextRef.current = canvas.getContext("2d");
         const context = contextRef.current;
@@ -107,10 +101,10 @@ const Canvas = () => {
     }, []);
 
     return (
-        <>
-            <canvas id="canvas" ref={canvasRef}></canvas>
-            {!turn &&
-                <>
+        <div className='flex flex-col items-center m-auto'>
+            <canvas className='border-b-4 border-yellow-400 rounded-lg m-2' id="canvas" ref={canvasRef}></canvas>
+            {turn &&
+                <div className='flex'>
                     <button onClick={handleClearCanvas}>Clear</button>
 
                     <div onClick={(e) => drawingColor = e.target.style.backgroundColor} style={{ width: "40px", height: "40px", backgroundColor: "red" }}></div>
@@ -120,9 +114,9 @@ const Canvas = () => {
 
                     <input onChange={(e) => drawingColor = e.target.value} type="color" />
                     <input onChange={(e) => drawingWidth = e.target.value} type="range" min={1} max={50} />
-                </>
+                </div>
             }
-        </>
+        </div>
     )
 }
 

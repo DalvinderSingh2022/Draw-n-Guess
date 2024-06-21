@@ -8,21 +8,22 @@ const Waittingroom = () => {
 
   useEffect(() => {
     socket.emit("get room");
-  }, [])
+  }, []);
 
   useEffect(() => {
     socket.on("updated room", (room) => {
       setRoom(room);
-      if (room.round >= 1) {
-        setWaiting(false);
-      }
+    });
+
+    socket.on("leave waitting room", () => {
+      setWaiting(false);
     });
 
     return () => socket.off("updated room");
   }, []);
 
   return (
-    <div>
+    <>
       {
         waiting
           ?
@@ -47,9 +48,9 @@ const Waittingroom = () => {
             {room?.host === socket.id && <button onClick={() => socket.emit("start game", room.id)} className="cursor-pointer transition-all text-xl font-semibold bg-orange-500 text-white px-8 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-1 hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-1">Start Game</button>}
           </div>
 
-          : <Room />
+          : <Room roomId={room?.id} />
       }
-    </div>
+    </>
   )
 
 }
