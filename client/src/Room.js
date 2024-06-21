@@ -1,33 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Canvas from "./Canvas";
-import { socket } from './App';
 import Messages from './Messages';
 import LeaderBoard from './LeaderBoard';
 import Timer from "./Timer";
 import Clock from './Clock';
+import Word from './Word';
+import Gameover from './Gameover';
 
 const Room = ({ roomId }) => {
-    const [room, setRoom] = useState(null);
-
-    useEffect(() => {
-        socket.on("updated room", (room) => {
-            setRoom(room);
-        });
-
-        return () => socket.off("updated room");
-    }, []);
-
     return (
         <>
-            <div className='max-w-5xl m-auto flex flex-wrap'>
+            <div className='max-w-5xl m-auto flex flex-col '>
                 <Clock />
+                <Word />
                 <Canvas />
                 <div className='w-full flex p-2 gap-4 flex-col md:flex-row'>
-                    <LeaderBoard players={room?.players} />
+                    <LeaderBoard />
                     <Messages roomId={roomId} />
                 </div>
                 <Timer />
             </div>
+            <Gameover />
         </>
     )
 }

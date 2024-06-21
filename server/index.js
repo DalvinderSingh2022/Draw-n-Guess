@@ -34,6 +34,7 @@ io.on("connection", (socket) => {
             players: [{
                 name: userName,
                 id: socket.id,
+                guessed: false,
                 score: 0
             }],
             host: socket.id,
@@ -43,6 +44,8 @@ io.on("connection", (socket) => {
             turnIndex: -1,
             maxRounds: 3,
             timer: 0,
+            currentWord: '',
+            started: false,
             id: roomId
         }
         rooms[roomId] = room;
@@ -50,6 +53,7 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         socket.emit("joined", room);
+        io.in(roomId).emit("update messages", `Hosted the room`, userName);
         console.log("hosted roomId: " + roomId);
     });
 
@@ -71,10 +75,11 @@ io.on("connection", (socket) => {
                 socket.join(roomId);
 
                 socket.emit("joined", room);
+                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(roomId).emit("update messages", `Join the room`, userName);
             }
         }
     });
-
 
     socket.on("get room", () => {
         const room = rooms.filter(room => room.players.find(player => player.id === socket.id))?.[0];
@@ -83,8 +88,10 @@ io.on("connection", (socket) => {
     });
 
     socket.on("start game", (roomId) => {
+        rooms[roomId].started = true;
+
         io.in(roomId).emit("updated room", rooms[roomId]);
-        io.in(roomId).emit("leave waitting room");
+        io.in(roomId).emit("update leaderboard", rooms[roomId].players);
 
         nextRound(roomId);
     });
@@ -93,7 +100,8 @@ io.on("connection", (socket) => {
         const room = rooms[roomId];
 
         if (room.round >= room.maxRounds) {
-            io.in(roomId).emit("set timer", 1000, `game over`);
+            io.in(roomId).emit("game over");
+            io.in(room.id).emit("update leaderboard", room.players);
         } else {
             room.round = room.round + 1;
             room.turnIndex = 0;
@@ -110,12 +118,12 @@ io.on("connection", (socket) => {
         if (!room.players[room.turnIndex]?.id) {
             nextRound(roomId);
         } else {
-            room.currentWord = words[Math.floor(Math.random() * words.length)];
+            room.currentWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+            room.players.map(player => player.guessed = false);
             room.turnIndex = room.turnIndex + 1;
             room.timer = 70;
+            const drawer = room.players[room.turnIndex - 1];
             const callback = () => {
-                const drawer = room.players[room.turnIndex - 1];
-
                 io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name}'s turn`);
                 if (drawer.id === socket.id) {
                     socket.emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
@@ -125,7 +133,15 @@ io.on("connection", (socket) => {
 
                 io.in(room.id).emit("set clock", room.timer);
             }
+
+            io.in(roomId).emit("update leaderboard", room.players);
             io.in(room.id).emit("updated room", room);
+            io.to(roomId).except(drawer.id).emit("new word", room.currentWord, false);
+            if (drawer.id === socket.id) {
+                socket.emit("new word", room.currentWord, true);
+            } else {
+                socket.to(drawer.id).emit("new word", room.currentWord, true);
+            }
 
             updatingTimer(room, callback);
         }
@@ -149,16 +165,59 @@ io.on("connection", (socket) => {
         socket.to(roomId).emit("new canvas", canvasImage);
     });
 
-    socket.on('new message', (msg, roomId) => {
-        const player = rooms[roomId].players.find(player => player.id === socket.id);
+    socket.on('new message', (message, roomId) => {
+        const room = rooms[roomId];
+        const player = room.players.find(player => player.id === socket.id);
+        const drawer = room.players[room.turnIndex - 1];
 
-        io.in(roomId).emit("update messages", msg, player);
+        if (room.currentWord.toLowerCase() !== message.toLowerCase()) {
+            io.in(roomId).emit("update messages", message, player.name);
+        } else {
+            if (player.id === drawer.id) {
+                socket.emit("update messages", "You can't write word in chat", "Warning");
+            }
+            else if (player.guessed) {
+                socket.emit("update messages", "You have already guessed", "Warning");
+            } else {
+                const score = room.timer;
+                player.score += score;
+                player.guessed = true;
+
+                io.in(roomId).emit("update messages", `have guessed word +${score}`, player.name);
+                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(room.id).emit("new word", room.currentWord, true);
+            }
+        }
     });
 
     socket.on("disconnect", () => {
         console.log("disconnected : " + socket.id);
-    })
-})
 
-const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        rooms.map(room => {
+            let playerLeft;
+            const newPlayers = [];
+            room.players.map(player => (player.id === socket.id) ? playerLeft = player : newPlayers.push(player));
+            room.players = newPlayers;
+
+            if (room.players.length <= 1 && room.started) {
+                io.in(room.id).emit("game over");
+                io.in(room.id).emit("update leaderboard", room.players);
+                return;
+            }
+
+            if (playerLeft?.id) {
+                io.in(room.id).emit("update messages", `Left the room`, playerLeft.name);
+                io.in(room.id).emit("update leaderboard", room.players);
+
+                if (playerLeft.id == room.host) {
+                    room.host = room.players[0].id;
+
+                    io.in(room.id).emit("update messages", `is now host of room`, room.players[0].name);
+                }
+                io.in(room?.id).emit("updated room", room);
+            }
+        });
+    });
+});
+
+server.listen(4000, () => console.log(`Server running on port ${4000}`));

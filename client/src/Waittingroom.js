@@ -13,10 +13,7 @@ const Waittingroom = () => {
   useEffect(() => {
     socket.on("updated room", (room) => {
       setRoom(room);
-    });
-
-    socket.on("leave waitting room", () => {
-      setWaiting(false);
+      setWaiting(!room.started);
     });
 
     return () => socket.off("updated room");
@@ -31,7 +28,7 @@ const Waittingroom = () => {
 
             <div className="flex flex-col m-auto bg-blue-100 rounded-2xl w-full border-orange-400 border-b-4 justify-center">
               <span className="flex justify-between text-2xl font-bold bg-orange-400 text-white px-6 py-2 rounded-2xl border-orange-500 border-b-4">
-                <span>{room?.players.length < room?.maxPlayers ? "Waiting for players..." : "Room is Full"}</span>
+                <span>Room Id: {room?.id}</span>
                 <span>{room?.players.length}/{room?.maxPlayers}</span>
               </span>
 
@@ -45,7 +42,8 @@ const Waittingroom = () => {
               </div>
             </div>
 
-            {room?.host === socket.id && <button onClick={() => socket.emit("start game", room.id)} className="cursor-pointer transition-all text-xl font-semibold bg-orange-500 text-white px-8 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-1 hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-1">Start Game</button>}
+            <button onClick={() => window.location.reload()} className="cursor-pointer transition-all text-xl font-semibold bg-orange-500 text-white px-8 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-1 hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-1">leave Room</button>
+            {(room?.host === socket.id && room?.players.length >= 2) && <button onClick={() => socket.emit("start game", room.id)} className="cursor-pointer transition-all text-xl font-semibold bg-orange-500 text-white px-8 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-1 hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-1">Start Game</button>}
           </div>
 
           : <Room roomId={room?.id} />

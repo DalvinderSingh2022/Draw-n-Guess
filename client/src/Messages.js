@@ -7,8 +7,8 @@ const Messages = ({ roomId }) => {
     const messagesRef = useRef(null);
 
     useEffect(() => {
-        socket.on('update messages', (msg, player) => {
-            setMessages([...messages, { text: msg, sender: player }]);
+        socket.on('update messages', (text, sender) => {
+            setMessages([...messages, { text, sender }]);
         });
     }, [messages]);
 
@@ -27,7 +27,7 @@ const Messages = ({ roomId }) => {
 
             <div className='flex flex-col h-96 overflow-y-auto' ref={messagesRef}>
                 {messages.map(message => (
-                    <div className='bg-blue-200 border-blue-300 py-1 px-2 text-normal border-y-[1px] text-wrap'>{message.sender.name}: {message.text}</div>
+                    <div className='bg-blue-200 border-blue-300 py-1 px-2 text-normal border-y-[1px] text-wrap'>{message.sender + ": "}{message.text}</div>
                 ))}
             </div>
 

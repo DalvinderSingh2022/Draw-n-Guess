@@ -1,7 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { socket } from './App';
 
-const LeaderBoard = ({ players }) => {
+const LeaderBoard = () => {
+    const [players, setPlayers] = useState([]);
+
+    useEffect(() => {
+        socket.on("update leaderboard", (players) => {
+            setPlayers(players.sort((a, b) => b.score - a.score));
+        });
+
+        return () => socket.off("update leaderboard");
+    }, []);
 
     return (
         <div className='w-full md:w-1/2 h-96 bg-blue-100 rounded-2xl flex flex-col justify-between'>
