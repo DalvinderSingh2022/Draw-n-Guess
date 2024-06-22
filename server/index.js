@@ -53,6 +53,7 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         socket.emit("joined", room);
+
         io.in(roomId).emit("update messages", `Hosted the room`, userName);
         console.log("hosted roomId: " + roomId);
     });
@@ -70,11 +71,12 @@ io.on("connection", (socket) => {
                     name: userName,
                     id: socket.id,
                     score: 0
-                })
+                });
 
                 socket.join(roomId);
 
                 socket.emit("joined", room);
+
                 io.in(roomId).emit("update leaderboard", room.players);
                 io.in(roomId).emit("update messages", `Join the room`, userName);
             }
@@ -118,10 +120,10 @@ io.on("connection", (socket) => {
         if (!room.players[room.turnIndex]?.id) {
             nextRound(roomId);
         } else {
-            room.currentWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+            room.currentWord = words[Math.floor(Math.random() * words.length)];
             room.players.map(player => player.guessed = false);
             room.turnIndex = room.turnIndex + 1;
-            room.timer = 70;
+            room.timer = 10 + 60;
             const drawer = room.players[room.turnIndex - 1];
             const callback = () => {
                 io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name}'s turn`);
@@ -182,8 +184,10 @@ io.on("connection", (socket) => {
                 const score = room.timer;
                 player.score += score;
                 player.guessed = true;
+                drawer.score += scorePerGuess;
 
                 io.in(roomId).emit("update messages", `have guessed word +${score}`, player.name);
+                io.in(roomId).emit("update messages", `for ${player.name}'s guess +${scorePerGuess}`, drawer.name);
                 io.in(roomId).emit("update leaderboard", room.players);
                 io.in(room.id).emit("new word", room.currentWord, true);
             }
@@ -214,6 +218,7 @@ io.on("connection", (socket) => {
 
                     io.in(room.id).emit("update messages", `is now host of room`, room.players[0].name);
                 }
+
                 io.in(room?.id).emit("updated room", room);
             }
         });
