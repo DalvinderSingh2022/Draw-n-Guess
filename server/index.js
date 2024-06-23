@@ -13,7 +13,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-const rooms = [];
+let rooms = [];
 
 io.on("connection", (socket) => {
     console.log("user connected : " + socket.id);
@@ -22,7 +22,7 @@ io.on("connection", (socket) => {
     //     console.log(username)
     // });
 
-    socket.on("host room", (userName) => {
+    socket.on("host room", (userName, image) => {
         let roomId = Math.floor((Math.random() * 9000) + 1000);
         while (rooms[roomId]) {
             roomId = Math.floor((Math.random() * 9000) + 1000);
@@ -33,7 +33,8 @@ io.on("connection", (socket) => {
                 name: userName,
                 id: socket.id,
                 guessed: false,
-                score: 0
+                score: 0,
+                image
             }],
             host: socket.id,
             round: 0,
@@ -54,7 +55,7 @@ io.on("connection", (socket) => {
         console.log("hosted roomId: " + roomId);
     });
 
-    socket.on("join room", (roomId, userName) => {
+    socket.on("join room", (roomId, userName, image) => {
         const room = rooms[roomId];
 
         if (!room) {
@@ -66,7 +67,8 @@ io.on("connection", (socket) => {
                 room.players.push({
                     name: userName,
                     id: socket.id,
-                    score: 0
+                    score: 0,
+                    image
                 });
 
                 socket.join(roomId);
@@ -199,29 +201,34 @@ io.on("connection", (socket) => {
         console.log("disconnected : " + socket.id);
 
         rooms.map(room => {
-            let playerLeft;
+            let playerLeft = undefined;
             const newPlayers = [];
+            const roomId = room.id;
+
             room.players.map(player => (player.id === socket.id) ? playerLeft = player : newPlayers.push(player));
             room.players = newPlayers;
 
-            if (room.players.length <= 1 && room.started) {
-                io.in(room.id).emit("game over");
-                io.in(room.id).emit("update leaderboard", room.players);
-                return;
-            }
+            if (playerLeft) {
+                if (room.players.length <= 0) {
+                    rooms = rooms.filter(room => room.id !== roomId);
+                }
+                else if (room.players.length <= 1 && room.started) {
+                    io.in(room.id).emit("game over");
+                    io.in(room.id).emit("update leaderboard", room.players);
+                    return;
+                } else {
+                    io.in(roomId).emit("update messages", `${playerLeft.name} Left the room`, "alert");
+                    io.in(roomId).emit("update leaderboard", room.players);
 
-            if (playerLeft?.id && room.players.length >= 2) {
-                io.in(room.id).emit("update messages", `${playerLeft.name} Left the room`, "alert");
-                io.in(room.id).emit("update leaderboard", room.players);
+                    if (playerLeft.id == room.host) {
+                        room.host = room.players[0].id;
 
-                if (playerLeft.id == room.host) {
-                    room.host = room.players[0].id;
+                        io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
+                    }
 
-                    io.in(room.id).emit("update messages", `${room.players[0].name} is now host of room`, "event");
+                    io.in(roomId).emit("updated room", room);
                 }
             }
-
-            io.in(room?.id).emit("updated room", room);
         });
     });
 });
