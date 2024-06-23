@@ -4,14 +4,21 @@ import { socket } from './App';
 const messagStyle = {
     you: "rounded-br-none bg-blue-500 self-end text-white",
     others: "rounded-bl-none bg-white",
-    event: "bg-yellow-300 self-center",
-    alert: "bg-red-300 self-center"
+    event: "bg-yellow-500 self-center text-white",
+    alert: "bg-red-500 self-center text-white"
 }
 
 const Messages = ({ roomId }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const messagesRef = useRef(null);
+
+    useEffect(() => {
+        messagesRef?.current.addEventListener('DOMNodeInserted', event => {
+            const { currentTarget: target } = event;
+            target.scroll({ top: target.scrollHeight, behavior: 'smooth' });
+        });
+    }, []);
 
     useEffect(() => {
         socket.on('update messages', (text, type, sender) => {
@@ -36,7 +43,7 @@ const Messages = ({ roomId }) => {
 
             <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2' ref={messagesRef}>
                 {messages.map(message => (
-                    <div className={`${messagStyle[message.type]} rounded-full px-3 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
+                    <div key={message.sender + message.type + message.text} className={`${messagStyle[message.type]} rounded-full px-4 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}
             </div>
 
