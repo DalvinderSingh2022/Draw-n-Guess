@@ -9,12 +9,12 @@ const Clock = () => {
             setTimer(time);
         });
 
-        return socket.off("set clock");
+        return () => socket.off("set clock");
     }, [time]);
 
     return (
         time >= 0 && time <= 60
-            ? <span span className='bg-orange-400 border-orange-500 border-b-4 text-white font-bold w-14 text-xl text-bold aspect-square grid place-items-center rounded-full ' >
+            ? <span className='bg-orange-400 border-orange-500 border-b-4 text-white font-bold w-14 text-xl text-bold aspect-square grid place-items-center rounded-full ' >
                 {time}
             </span >
             : null
