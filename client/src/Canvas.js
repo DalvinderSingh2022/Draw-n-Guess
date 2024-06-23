@@ -25,14 +25,14 @@ const Canvas = () => {
     const startDrawing = useCallback((e) => {
         isDrawing = true;
         contextRef.current.beginPath();
-        contextRef.current.moveTo(e.clientX - canvasRef.current.offsetLeft, e.clientY - canvasRef.current.offsetTop);
+        contextRef.current.moveTo(e.clientX - canvasRef.current.offsetLeft, e.clientY - canvasRef.current.offsetTop + window.scrollY);
 
         e.preventDefault();
     }, [])
 
     const drawing = useCallback((e) => {
         if (isDrawing) {
-            contextRef.current.lineTo(e.clientX - canvasRef.current.offsetLeft, e.clientY - canvasRef.current.offsetTop);
+            contextRef.current.lineTo(e.clientX - canvasRef.current.offsetLeft, e.clientY - canvasRef.current.offsetTop + window.scrollY);
             contextRef.current.strokeStyle = drawingColor;
             contextRef.current.lineWidth = drawingWidth;
             contextRef.current.lineCap = "round";
@@ -102,7 +102,7 @@ const Canvas = () => {
 
     return (
         <div className='flex flex-col items-center m-auto'>
-            <canvas className='border-b-4 border-yellow-400 rounded-lg m-2' id="canvas" ref={canvasRef}></canvas>
+            <canvas className='border-b-4 border-yellow-400 rounded-lg mt-4' ref={canvasRef}></canvas>
             {turn &&
                 <div className='flex'>
                     <button onClick={handleClearCanvas}>Clear</button>

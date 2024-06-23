@@ -53,8 +53,6 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         socket.emit("joined", room);
-
-        io.in(roomId).emit("update messages", `Hosted the room`, userName);
         console.log("hosted roomId: " + roomId);
     });
 
@@ -78,7 +76,7 @@ io.on("connection", (socket) => {
                 socket.emit("joined", room);
 
                 io.in(roomId).emit("update leaderboard", room.players);
-                io.in(roomId).emit("update messages", `Join the room`, userName);
+                io.in(roomId).emit("update messages", `${userName} Join the room`, "event");
             }
         }
     });
@@ -86,7 +84,7 @@ io.on("connection", (socket) => {
     socket.on("get room", () => {
         const room = rooms.filter(room => room.players.find(player => player.id === socket.id))?.[0];
 
-        io.in(room.id).emit("updated room", room);
+        if (room) io.in(room.id).emit("updated room", room);
     });
 
     socket.on("start game", (roomId) => {
@@ -108,9 +106,12 @@ io.on("connection", (socket) => {
             room.round = room.round + 1;
             room.turnIndex = 0;
             room.timer = 5;
+            room.currentWord = '';
+            io.to(roomId).emit("new word", room, false);
             const callback = () => io.in(room.id).emit("set timer", room.timer, `Starting Round ${room.round}`);
 
             updatingTimer(room, callback, false);
+            io.in(roomId).emit("update messages", `Round ${room.round} started`, "event");
         }
     }
 
@@ -126,7 +127,7 @@ io.on("connection", (socket) => {
             room.timer = 10 + 60;
             const drawer = room.players[room.turnIndex - 1];
             const callback = () => {
-                io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name}'s turn`);
+                io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name} is choosing word to draw`);
                 if (drawer.id === socket.id) {
                     socket.emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
                 } else {
@@ -138,14 +139,15 @@ io.on("connection", (socket) => {
 
             io.in(roomId).emit("update leaderboard", room.players);
             io.in(room.id).emit("updated room", room);
-            io.to(roomId).except(drawer.id).emit("new word", room.currentWord, false);
+            io.to(roomId).except(drawer.id).emit("new word", room, false);
             if (drawer.id === socket.id) {
-                socket.emit("new word", room.currentWord, true);
+                socket.emit("new word", room, true);
             } else {
-                socket.to(drawer.id).emit("new word", room.currentWord, true);
+                socket.to(drawer.id).emit("new word", room, true);
             }
 
             updatingTimer(room, callback);
+            io.in(roomId).emit("update messages", `${drawer.name} is drawing`, "event");
         }
     }
 
@@ -173,23 +175,24 @@ io.on("connection", (socket) => {
         const drawer = room.players[room.turnIndex - 1];
 
         if (room.currentWord.toLowerCase() !== message.toLowerCase()) {
-            io.in(roomId).emit("update messages", message, player.name);
+            socket.to(roomId).emit("update messages", message, "others", player.name);
+            socket.emit("update messages", message, "you");
         } else {
             if (player.id === drawer.id) {
-                socket.emit("update messages", "You can't write word in chat", "Warning");
+                socket.emit("update messages", "You can't write word in chat", "alert");
             }
             else if (player.guessed) {
-                socket.emit("update messages", "You have already guessed", "Warning");
+                socket.emit("update messages", "You have already guessed", "alert");
             } else {
                 const score = room.timer;
                 player.score += score;
                 player.guessed = true;
-                drawer.score += scorePerGuess;
+                drawer.score += 15;
 
-                io.in(roomId).emit("update messages", `have guessed word +${score}`, player.name);
-                io.in(roomId).emit("update messages", `for ${player.name}'s guess +${scorePerGuess}`, drawer.name);
+                io.in(roomId).emit("update messages", `have guessed word +${score}`, "event");
+                io.in(roomId).emit("update messages", `${drawer.name} get +15 for ${player.name}'s guess`, "event");
                 io.in(roomId).emit("update leaderboard", room.players);
-                io.in(room.id).emit("new word", room.currentWord, true);
+                io.in(room.id).emit("new word", room, true);
             }
         }
     });
@@ -209,18 +212,18 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            if (playerLeft?.id) {
-                io.in(room.id).emit("update messages", `Left the room`, playerLeft.name);
+            if (playerLeft?.id && room.players.length >= 2) {
+                io.in(room.id).emit("update messages", `${playerLeft.name} Left the room`, "alert");
                 io.in(room.id).emit("update leaderboard", room.players);
 
                 if (playerLeft.id == room.host) {
                     room.host = room.players[0].id;
 
-                    io.in(room.id).emit("update messages", `is now host of room`, room.players[0].name);
+                    io.in(room.id).emit("update messages", `${room.players[0].name} is now host of room`, "event");
                 }
-
-                io.in(room?.id).emit("updated room", room);
             }
+
+            io.in(room?.id).emit("updated room", room);
         });
     });
 });

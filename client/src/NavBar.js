@@ -1,9 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { socket } from './App';
+import Clock from './Clock';
 
 const NavBar = () => {
+    const [room, setRoom] = useState(null);
+    const [show, setShow] = useState(false);
+
+    useEffect(() => {
+        socket.on("new word", (room, show) => {
+            setRoom(room);
+            setShow(show);
+        });
+
+        return () => socket.off("new word");
+    }, []);
+
     return (
-        <nav className='text-center relative text-white text-3xl font-bold m-auto px-9 py-6 bg-yellow-400'>
-            Draw 'n Guess
+        <nav className={`${room?.currentWord ? "py-2" : "py-6"} px-2 mdpx-6 text-center relative text-white text-3xl font-bold m-auto bg-yellow-400`}>
+            {room?.currentWord
+                ?
+                <div className='max-w-4xl m-auto flex items-center justify-between'>
+                    <Clock />
+                    <div className='self-center'>{room?.currentWord && room.currentWord.split('').map(alphabet => show ? (alphabet.toUpperCase() + " ") : "_ ")}<sup>{room?.currentWord && room.currentWord.length}</sup></div>
+                    <span>{room.round}/{room.maxRounds} </span>
+                </div>
+                : "Draw 'n Guess"}
         </nav>
     )
 }

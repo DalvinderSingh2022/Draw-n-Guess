@@ -1,14 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { socket } from './App';
 
+const messagStyle = {
+    you: "rounded-br-none bg-blue-500 self-end text-white",
+    others: "rounded-bl-none bg-white",
+    event: "bg-yellow-300 self-center",
+    alert: "bg-red-300 self-center"
+}
+
 const Messages = ({ roomId }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const messagesRef = useRef(null);
 
     useEffect(() => {
-        socket.on('update messages', (text, sender) => {
-            setMessages([...messages, { text, sender }]);
+        socket.on('update messages', (text, type, sender) => {
+            setMessages([...messages, { text, sender, type }]);
         });
     }, [messages]);
 
@@ -22,12 +29,12 @@ const Messages = ({ roomId }) => {
     };
 
     return (
-        <div className='w-full md:w-1/2 bg-blue-100 rounded-2xl flex flex-col justify-between'>
-            <span className="flex justify-center text-xl font-bold bg-orange-400 text-white px-6 py-2 rounded-2xl border-orange-500 border-b-4">Messages</span>
+        <div className='w-full md:w-1/2  bg-blue-200/50 backdrop-blur rounded-2xl border-yellow-400 border-b-4 shadow-xl'>
+            <div className="w-full text-center text-2xl font-bold bg-yellow-400 text-white px-6 py-2 rounded-2xl border-yellow-500 border-b-4">Messages</div>
 
-            <div className='flex flex-col h-96 overflow-y-auto' ref={messagesRef}>
+            <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2' ref={messagesRef}>
                 {messages.map(message => (
-                    <div className='bg-blue-200 border-blue-300 py-1 px-2 text-normal border-y-[1px] text-wrap'>{message.sender + ": "}{message.text}</div>
+                    <div className={`${messagStyle[message.type]} rounded-full px-3 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}
             </div>
 
@@ -37,8 +44,8 @@ const Messages = ({ roomId }) => {
                     type="text"
                     value={message}
                     onChange={e => setMessage(e.target.value)}
-                    placeholder='enter'
-                    className="w-full px-4 py-2 rounded-xl transition-all text-md font-bolder outline-none focus:border-b-yellow-400 border-b-4"
+                    placeholder='Message...'
+                    className="w-full px-4 py-2 rounded-b-xl text-lg font-bolder outline-none"
                 />
             </form>
         </div>
