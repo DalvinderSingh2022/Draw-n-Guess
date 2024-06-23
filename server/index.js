@@ -99,55 +99,59 @@ io.on("connection", (socket) => {
     const nextRound = (roomId) => {
         const room = rooms[roomId];
 
-        if (room.round >= room.maxRounds) {
-            io.in(roomId).emit("game over");
-            io.in(room.id).emit("update leaderboard", room.players);
-        } else {
-            room.round = room.round + 1;
-            room.turnIndex = 0;
-            room.timer = 5;
-            room.currentWord = '';
-            io.to(roomId).emit("new word", room, false);
-            const callback = () => io.in(room.id).emit("set timer", room.timer, `Starting Round ${room.round}`);
+        if (room) {
+            if (room.round >= room.maxRounds) {
+                io.in(roomId).emit("game over");
+                io.in(room.id).emit("update leaderboard", room.players);
+            } else {
+                room.round = room.round + 1;
+                room.turnIndex = 0;
+                room.timer = 5;
+                room.currentWord = '';
+                io.to(roomId).emit("new word", room, false);
+                const callback = () => io.in(room.id).emit("set timer", room.timer, `Starting Round ${room.round}`);
 
-            updatingTimer(room, callback, false);
-            io.in(roomId).emit("update messages", `Round ${room.round} started`, "event");
+                updatingTimer(room, callback, false);
+                io.in(roomId).emit("update messages", `Round ${room.round} started`, "event");
+            }
         }
     }
 
     const nextTurn = (roomId) => {
         const room = rooms[roomId];
 
-        if (!room.players[room.turnIndex]?.id) {
-            nextRound(roomId);
-        } else {
-            room.currentWord = words[Math.floor(Math.random() * words.length)];
-            room.players.map(player => player.guessed = false);
-            room.turnIndex = room.turnIndex + 1;
-            room.timer = 10 + 60;
-            const drawer = room.players[room.turnIndex - 1];
-            const callback = () => {
-                io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name} is choosing word to draw`);
-                if (drawer.id === socket.id) {
-                    socket.emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
-                } else {
-                    socket.to(drawer.id).emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
+        if (room) {
+            if (!room.players[room.turnIndex]?.id) {
+                nextRound(roomId);
+            } else {
+                room.currentWord = words[Math.floor(Math.random() * words.length)];
+                room.players.map(player => player.guessed = false);
+                room.turnIndex = room.turnIndex + 1;
+                room.timer = 10 + 60;
+                const drawer = room.players[room.turnIndex - 1];
+                const callback = () => {
+                    io.to(roomId).except(drawer.id).emit("set timer", room.timer - 60, `${drawer?.name} is choosing word to draw`);
+                    if (drawer.id === socket.id) {
+                        socket.emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
+                    } else {
+                        socket.to(drawer.id).emit("set timer", room.timer - 60, `You have to draw ${room.currentWord}`);
+                    }
+
+                    io.in(room.id).emit("set clock", room.timer);
                 }
 
-                io.in(room.id).emit("set clock", room.timer);
-            }
+                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(roomId).emit("updated room", room);
+                io.to(roomId).except(drawer.id).emit("new word", room, false);
+                if (drawer.id === socket.id) {
+                    socket.emit("new word", room, true);
+                } else {
+                    socket.to(drawer.id).emit("new word", room, true);
+                }
 
-            io.in(roomId).emit("update leaderboard", room.players);
-            io.in(room.id).emit("updated room", room);
-            io.to(roomId).except(drawer.id).emit("new word", room, false);
-            if (drawer.id === socket.id) {
-                socket.emit("new word", room, true);
-            } else {
-                socket.to(drawer.id).emit("new word", room, true);
+                updatingTimer(room, callback);
+                io.in(roomId).emit("update messages", `${drawer.name} is drawing`, "event");
             }
-
-            updatingTimer(room, callback);
-            io.in(roomId).emit("update messages", `${drawer.name} is drawing`, "event");
         }
     }
 
