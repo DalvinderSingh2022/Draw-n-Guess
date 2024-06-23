@@ -4,6 +4,7 @@ import { socket } from './App';
 const Home = () => {
     const [userName, setUserName] = useState("Player");
     const [roomId, setRoomId] = useState(undefined);
+    const [image, setImage] = useState();
 
     // const joinPublicRoom = () => {
     //     // socket.emit('join public room', userName);
@@ -16,7 +17,7 @@ const Home = () => {
             return;
         }
 
-        socket.emit("join room", roomId, userName);
+        socket.emit("join room", roomId, userName, image);
     }
 
     const hostRoom = () => {
@@ -25,7 +26,7 @@ const Home = () => {
             return;
         }
 
-        socket.emit("host room", userName);
+        socket.emit("host room", userName, image);
     }
 
     useEffect(() => {
@@ -40,11 +41,14 @@ const Home = () => {
         <div className="max-w-2xl m-auto py-12 px-2">
 
             <div className="flex flex-col items-center mb-12">
-                <img
-                    className='w-40 aspect-square rounded-t-full ring-4 ring-yellow-400'
-                    src="https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"
-                    alt={userName}
-                />
+                <label htmlFor="image" className='flex flex-col items-center'>
+                    <input className='hidden' name='image' id='image' accept='image/*' type="file" onChange={(e) => setImage(URL.createObjectURL(e.target.files[0]))} />
+                    <img
+                        className='w-40 aspect-square rounded-t-full ring-4 ring-yellow-400 cursor-pointer bg-white'
+                        src={image || "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"}
+                        alt={userName}
+                    />
+                </label>
                 <div>
                     <input
                         required
