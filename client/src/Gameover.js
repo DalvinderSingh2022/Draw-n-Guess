@@ -9,6 +9,8 @@ const Gameover = () => {
         socket.on("game over", (time) => {
             setGameover(true);
         });
+
+        return () => socket.off("game over");
     }, [gameover]);
 
     return (

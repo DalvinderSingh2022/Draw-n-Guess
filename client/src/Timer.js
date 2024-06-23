@@ -7,7 +7,9 @@ const Timer = () => {
     useEffect(() => {
         socket.on("set timer", (time, message) => {
             setTimer({ time, message });
-        })
+        });
+
+        return () => socket.off("set timer");
     }, [timer]);
 
     return (

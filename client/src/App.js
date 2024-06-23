@@ -4,7 +4,7 @@ import NavBar from './NavBar';
 
 import { io } from 'socket.io-client';
 import Waittingroom from './Waittingroom';
-export const socket = io.connect('https://drawnguessbackend.onrender.com/');
+export const socket = io.connect('http://localhost:4000/');
 
 const App = () => {
     const [joined, setJoined] = useState(false);

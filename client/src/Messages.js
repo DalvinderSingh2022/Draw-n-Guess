@@ -17,6 +17,8 @@ const Messages = ({ roomId }) => {
         socket.on('update messages', (text, type, sender) => {
             setMessages([...messages, { text, sender, type }]);
         });
+
+        return () => socket.off("update messages");
     }, [messages]);
 
     const handleSubmit = (event) => {

@@ -7,7 +7,9 @@ const Clock = () => {
     useEffect(() => {
         socket.on("set clock", (time) => {
             setTimer(time);
-        })
+        });
+
+        return socket.off("set clock");
     }, [time]);
 
     return (

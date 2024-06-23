@@ -7,10 +7,10 @@ const Waittingroom = () => {
   const [room, setRoom] = useState(null);
 
   const startGame = () => {
-    // if (room.players.length < 2) {
-    //   alert("atlest 2 players requied to start game");
-    //   return;
-    // }
+    if (room.players.length < 2) {
+      alert("atlest 2 players requied to start game");
+      return;
+    }
 
     socket.emit("start game", room.id);
   }
