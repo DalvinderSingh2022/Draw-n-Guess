@@ -1,9 +1,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { socket } from './App';
 
-let drawingColor = "red";
-let drawingWidth = 5;
+import { FaPaintBrush } from "react-icons/fa";
+import { FaEraser } from "react-icons/fa6";
+import { FaRedo } from "react-icons/fa";
+import { FaUndo } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa6";
+
 let isDrawing = false;
+let drawingRecord = [];
+let drawingIndex = -1;
+let drawingColor = "black";
+let drawingWidth = 5;
+let isBrush = true;
+let previousColor;
+const colors = ["black", "brown", "red", "pink", "blue", "cyan", "green", "Aquamarine", "yellow", "purple"];
 
 const Canvas = () => {
     const [room, setRoom] = useState(null);
@@ -11,14 +22,76 @@ const Canvas = () => {
     const canvasRef = useRef(null);
     const contextRef = useRef(null);
 
+    const changeColor = (e) => {
+        drawingColor = e.target.style.backgroundColor;
+        for (let i = 0; i < colors.length; i++) {
+            e.target.parentNode.childNodes[i].classList.remove("border-yellow-400");
+        }
+        e.target.classList.add("border-yellow-400");
+    }
+
+    const changeWidth = (e) => {
+        drawingWidth = e.target.getAttribute("data-width");
+        if (e.target.type) {
+            for (let i = 0; i < e.target.parentNode.childNodes.length; i++) {
+                e.target.parentNode.childNodes[i].classList.remove("border-orange-600", "bg-orange-500");
+                e.target.parentNode.childNodes[i].classList.add("border-yellow-600", "bg-yellow-500");
+            };
+            e.target.classList.remove("border-yellow-600", "bg-yellow-500");
+            e.target.classList.add("border-orange-600", "bg-orange-500");
+        }
+    }
+
+    const changeTool = (e, value) => {
+        isBrush = value;
+
+        if (value && e.target.type) {
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.remove("border-orange-600", "bg-orange-500");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.add("border-yellow-600", "bg-yellow-500");
+            drawingColor = previousColor || drawingColor;
+        } else {
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.remove("border-orange-600", "bg-orange-500");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.add("border-yellow-600", "bg-yellow-500");
+            previousColor = drawingColor !== "white" ? drawingColor : previousColor;
+            drawingColor = "white";
+        }
+
+        e.target.classList.remove("border-yellow-600", "bg-yellow-500");
+        e.target.classList.add("border-orange-600", "bg-orange-500");
+    }
+
+    const changeCanvas = (canvasImage) => {
+        const newImage = new Image();
+        newImage.src = canvasImage.replace(/^data:image\/png;base64,/, '');
+
+        newImage.onload = () => contextRef.current.drawImage(newImage, 0, 0);
+    }
+
+    const handleUndo = () => {
+        if (drawingIndex >= 0) {
+            drawingIndex = drawingIndex <= 0 ? 0 : drawingIndex - 1;
+            changeCanvas(drawingRecord[drawingIndex]);
+            socket.emit("change canvas", drawingRecord[drawingIndex], room.id);
+        }
+    }
+
+    const handleRedo = () => {
+        if (drawingIndex < drawingRecord.length) {
+            drawingIndex = drawingIndex >= drawingRecord.length - 1 ? drawingRecord.length - 1 : drawingIndex + 1;
+            changeCanvas(drawingRecord[drawingIndex]);
+            socket.emit("change canvas", drawingRecord[drawingIndex], room.id);
+        }
+    }
+
     const handleClearCanvas = () => {
         if (room) {
             contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
             contextRef.current.fillStyle = "white";
             contextRef.current.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            drawingRecord.push(canvasRef.current.toDataURL("image/jpeg", 1));
+            drawingIndex++;
 
-            socket.emit("change canvas", canvasRef.current.toDataURL("image/jpeg", 0.5), room.id);
+            socket.emit("change canvas", canvasRef.current.toDataURL("image/jpeg", 1), room.id);
         }
     }
 
@@ -47,8 +120,10 @@ const Canvas = () => {
         if (isDrawing && room) {
             contextRef.current.closePath();
             isDrawing = false;
+            drawingRecord.push(canvasRef.current.toDataURL("image/jpeg", 1));
+            drawingIndex++;
 
-            socket.emit("change canvas", canvasRef.current.toDataURL("image/jpeg", 1), room.id);
+            socket.emit("change canvas", drawingRecord[drawingIndex], room.id);
 
             e.preventDefault();
         }
@@ -72,6 +147,8 @@ const Canvas = () => {
         const context = contextRef.current;
         context.fillStyle = "white";
         context.fillRect(0, 0, canvas.width, canvas.height);
+        drawingIndex = 0;
+        drawingRecord = [canvasRef.current.toDataURL("image/jpeg", 1)];
 
         if (turn) {
             canvas.addEventListener("mousedown", startDrawing);
@@ -91,10 +168,7 @@ const Canvas = () => {
 
     useEffect(() => {
         socket.on("new canvas", (canvasImage) => {
-            const newImage = new Image();
-            newImage.src = canvasImage.replace(/^data:image\/png;base64,/, '');
-
-            newImage.onload = () => contextRef.current.drawImage(newImage, 0, 0);
+            changeCanvas(canvasImage);
         });
 
         return () => socket.off("new canvas");
@@ -102,21 +176,30 @@ const Canvas = () => {
 
     return (
         <div className='flex flex-col items-center m-auto'>
-            <canvas className='border-b-4 border-yellow-400 rounded-lg mt-4' ref={canvasRef}></canvas>
+            <canvas className='border-b-4 border-yellow-400 rounded-lg my-2' ref={canvasRef}></canvas>
             {turn &&
-                <div className='flex'>
-                    <button onClick={handleClearCanvas}>Clear</button>
+                <div className='flex flex-col md:flex-row gap-6 justify-between w-full bg-blue-200/60 backdrop-blur-sm p-4 mb-2 rounded-lg'>
+                    <div className="grid w-full md:w-fit grid-rows-2 grid-flow-col gap-2 md:gap-1 h-fit md:h-20 cursor-pointer md:pt-2">
+                        {colors.map(color =>
+                            <button key={color} onClick={event => changeColor(event)} style={{ backgroundColor: color }} className={`${color === drawingColor ? "border-yellow-400" : ""} aspect-square cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]`}></button>
+                        )}
+                        <button onClick={(e) => changeTool(e, false)} className={`${isBrush ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] row-span-2 h-12 m-auto grid place-items-center`}><FaEraser className='bg-transparent cursor-default' /></button>
+                        <button onClick={(e) => changeTool(e, true)} className={`${!isBrush ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] row-span-2 h-12 m-auto grid place-items-center`}><FaPaintBrush className='bg-transparent cursor-default' /></button>
+                    </div>
 
-                    <div onClick={(e) => drawingColor = e.target.style.backgroundColor} style={{ width: "40px", height: "40px", backgroundColor: "red" }}></div>
-                    <div onClick={(e) => drawingColor = e.target.style.backgroundColor} style={{ width: "40px", height: "40px", backgroundColor: "blue" }}></div>
-                    <div onClick={(e) => drawingColor = e.target.style.backgroundColor} style={{ width: "40px", height: "40px", backgroundColor: "green" }}></div>
-                    <div onClick={(e) => drawingColor = e.target.style.backgroundColor} style={{ width: "40px", height: "40px", backgroundColor: "cyan" }}></div>
-
-                    <input onChange={(e) => drawingColor = e.target.value} type="color" />
-                    <input onChange={(e) => drawingWidth = e.target.value} type="range" min={1} max={50} />
+                    <div className="flex w-full md:w-fit justify-center items-center gap-4 h-fit md:h-20 cursor-pointer">
+                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleUndo}><FaUndo /></button>
+                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleClearCanvas}><FaTrash /></button>
+                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleRedo}><FaRedo /></button>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 w-full md:w-fit h-fit md:h-20 cursor-pointer">
+                        {[5, 15, 30, 50, 100].map((width, index) =>
+                            <button key={width} data-width={width} onClick={event => changeWidth(event)} className={`${width !== drawingWidth ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} h-12 aspect-square cursor-pointer transition-all text-xl font-bold text-white rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] grid place-items-center`}><div style={{ width: `${(index * 6 + 10)}px` }} className={`cursor-default aspect-square rounded-full bg-black/80`}></div></button>
+                        )}
+                    </div>
                 </div>
             }
-        </div>
+        </div >
     )
 }
 
