@@ -25,20 +25,20 @@ const Canvas = () => {
     const changeColor = (e) => {
         drawingColor = e.target.style.backgroundColor;
         for (let i = 0; i < colors.length; i++) {
-            e.target.parentNode.childNodes[i].classList.remove("border-yellow-400");
+            e.target.parentNode.childNodes[i].classList.remove("primary");
         }
-        e.target.classList.add("border-yellow-400");
+        e.target.classList.add("primary");
     }
 
     const changeWidth = (e) => {
         drawingWidth = e.target.getAttribute("data-width");
         if (e.target.type) {
             for (let i = 0; i < e.target.parentNode.childNodes.length; i++) {
-                e.target.parentNode.childNodes[i].classList.remove("border-orange-600", "bg-orange-500");
-                e.target.parentNode.childNodes[i].classList.add("border-yellow-600", "bg-yellow-500");
+                e.target.parentNode.childNodes[i].classList.remove("secondary");
+                e.target.parentNode.childNodes[i].classList.add("primary");
             };
-            e.target.classList.remove("border-yellow-600", "bg-yellow-500");
-            e.target.classList.add("border-orange-600", "bg-orange-500");
+            e.target.classList.remove("primary");
+            e.target.classList.add("secondary");
         }
     }
 
@@ -46,18 +46,18 @@ const Canvas = () => {
         isBrush = value;
 
         if (value && e.target.type) {
-            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.remove("border-orange-600", "bg-orange-500");
-            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.add("border-yellow-600", "bg-yellow-500");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.remove("secondary");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 2].classList.add("primary");
             drawingColor = previousColor || drawingColor;
         } else {
-            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.remove("border-orange-600", "bg-orange-500");
-            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.add("border-yellow-600", "bg-yellow-500");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.remove("secondary");
+            e.target.parentNode.childNodes[e.target.parentNode.childNodes.length - 1].classList.add("primary");
             previousColor = drawingColor !== "white" ? drawingColor : previousColor;
             drawingColor = "white";
         }
 
-        e.target.classList.remove("border-yellow-600", "bg-yellow-500");
-        e.target.classList.add("border-orange-600", "bg-orange-500");
+        e.target.classList.remove("primary");
+        e.target.classList.add("secondary");
     }
 
     const changeCanvas = (canvasImage) => {
@@ -176,25 +176,27 @@ const Canvas = () => {
 
     return (
         <div className='flex flex-col items-center m-auto'>
-            <canvas className='border-b-4 border-yellow-400 rounded-lg my-2' ref={canvasRef}></canvas>
+            <canvas className='border-b-4 rounded-lg my-2 primary' ref={canvasRef}></canvas>
             {turn &&
-                <div className='flex flex-col md:flex-row gap-6 justify-between w-full bg-blue-200/60 backdrop-blur-sm p-4 mb-2 rounded-lg'>
+                <div className='flex flex-col md:flex-row gap-6 justify-between p-4 mb-2 container'>
                     <div className="grid w-full md:w-fit grid-rows-2 grid-flow-col gap-2 md:gap-1 h-fit md:h-20 cursor-pointer md:pt-2">
                         {colors.map(color =>
-                            <button key={color} onClick={event => changeColor(event)} style={{ backgroundColor: color }} className={`${color === drawingColor ? "border-yellow-400" : ""} aspect-square cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]`}></button>
+                            <button key={color} onClick={event => changeColor(event)} style={{ backgroundColor: color, borderWidth: "4px" }} className={`${color === drawingColor ? "primary" : ""} button rounded-full aspect-square p-3`}></button>
                         )}
-                        <button onClick={(e) => changeTool(e, false)} className={`${isBrush ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] row-span-2 h-12 m-auto grid place-items-center`}><FaEraser className='bg-transparent cursor-default' /></button>
-                        <button onClick={(e) => changeTool(e, true)} className={`${!isBrush ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} cursor-pointer transition-all text-xl font-bold text-white p-3 rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] row-span-2 h-12 m-auto grid place-items-center`}><FaPaintBrush className='bg-transparent cursor-default' /></button>
+                        <button onClick={(e) => changeTool(e, false)} className={`${isBrush ? "primary" : "secondary"} cursor-pointer button p-3 rounded-full row-span-2 h-12 m-auto grid place-items-center`}><FaEraser className='bg-transparent cursor-default' /></button>
+                        <button onClick={(e) => changeTool(e, true)} className={`${!isBrush ? "primary" : "secondary"} cursor-pointer button p-3 rounded-full row-span-2 h-12 m-auto grid place-items-center`}><FaPaintBrush className='bg-transparent cursor-default' /></button>
                     </div>
 
                     <div className="flex w-full md:w-fit justify-center items-center gap-4 h-fit md:h-20 cursor-pointer">
-                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleUndo}><FaUndo /></button>
-                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleClearCanvas}><FaTrash /></button>
-                        <button className='cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white p-3 rounded-full border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]' onClick={handleRedo}><FaRedo /></button>
+                        <button className='button primary p-3 rounded-full' onClick={handleUndo}><FaUndo /></button>
+                        <button className='button primary p-3 rounded-full' onClick={handleClearCanvas}><FaTrash /></button>
+                        <button className='button primary p-3 rounded-full' onClick={handleRedo}><FaRedo /></button>
                     </div>
                     <div className="flex items-center justify-center gap-2 w-full md:w-fit h-fit md:h-20 cursor-pointer">
                         {[5, 15, 30, 50, 100].map((width, index) =>
-                            <button key={width} data-width={width} onClick={event => changeWidth(event)} className={`${width !== drawingWidth ? "border-yellow-600 bg-yellow-500" : "border-orange-600 bg-orange-500"} h-12 aspect-square cursor-pointer transition-all text-xl font-bold text-white rounded-full border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] grid place-items-center`}><div style={{ width: `${(index * 6 + 10)}px` }} className={`cursor-default aspect-square rounded-full bg-black/80`}></div></button>
+                            <button key={width} data-width={width} onClick={event => changeWidth(event)} className={`${width !== drawingWidth ? "primary" : "secondary"} h-12 button aspect-square rounded-full grid place-items-center`}>
+                                <div style={{ width: `${(index * 6 + 10)}px` }} className={`cursor-default aspect-square rounded-full bg-black/80`}></div>
+                            </button>
                         )}
                     </div>
                 </div>

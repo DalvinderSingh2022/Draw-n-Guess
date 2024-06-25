@@ -3,10 +3,10 @@ import { socket } from './App';
 
 const messagStyle = {
     you: "rounded-br-none bg-blue-500 self-end",
-    others: "rounded-bl-none bg-white self-start text-black",
-    event: "bg-yellow-500",
-    alert: "bg-red-500",
-    points: "bg-green-500"
+    others: "rounded-bl-none bg-white self-start text-black/90",
+    event: "bg-yellow-500 self-center",
+    alert: "bg-red-500 self-center",
+    points: "bg-green-500 self-center"
 }
 
 const Messages = ({ roomId }) => {
@@ -39,12 +39,15 @@ const Messages = ({ roomId }) => {
     };
 
     return (
-        <div className='w-full md:w-1/2  bg-blue-200/50 backdrop-blur rounded-2xl border-yellow-400 border-b-4 shadow-xl'>
-            <div className="w-full text-center text-2xl font-bold bg-yellow-400 text-white px-6 py-2 rounded-2xl border-yellow-500 border-b-4">Messages</div>
+        <div className='md:w-1/2 container'>
+            <div className="heading primary">
+                <span>Messages</span>
+                <span>Rood Id: {roomId}</span>
+            </div>
 
             <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2' ref={messagesRef}>
                 {messages.map((message, index) => (
-                    <div key={index} className={`${messagStyle[message.type]} self-center text-white rounded-full px-4 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
+                    <div key={index} className={`rounded-full px-4 py-1 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}
             </div>
 
@@ -55,7 +58,7 @@ const Messages = ({ roomId }) => {
                     value={message}
                     onChange={e => setMessage(e.target.value)}
                     placeholder='Message...'
-                    className="w-full px-4 py-2 rounded-b-xl text-lg font-bolder outline-none"
+                    className="w-full px-4 py-2 rounded-b-xl text-lg font-semibold outline-none text-black/90"
                 />
             </form>
         </div>

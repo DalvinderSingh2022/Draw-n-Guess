@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
 
                 socket.emit("joined", room);
 
-                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(roomId).emit("update leaderboard", room);
                 io.in(roomId).emit("update messages", `${userName} Join the room`, "event");
             }
         }
@@ -91,7 +91,7 @@ io.on("connection", (socket) => {
         rooms[roomId].started = true;
 
         io.in(roomId).emit("updated room", rooms[roomId]);
-        io.in(roomId).emit("update leaderboard", rooms[roomId].players);
+        io.in(roomId).emit("update leaderboard", rooms[roomId]);
 
         nextRound(roomId);
     });
@@ -102,7 +102,7 @@ io.on("connection", (socket) => {
         if (room) {
             if (room.round >= room.maxRounds) {
                 io.in(roomId).emit("game over");
-                io.in(room.id).emit("update leaderboard", room.players);
+                io.in(room.id).emit("update leaderboard", room);
             } else {
                 room.round = room.round + 1;
                 room.turnIndex = 0;
@@ -140,7 +140,7 @@ io.on("connection", (socket) => {
                     io.in(room.id).emit("set clock", room.timer);
                 }
 
-                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(roomId).emit("update leaderboard", room);
                 io.in(roomId).emit("updated room", room);
                 io.to(roomId).except(drawer.id).emit("new word", room, false);
                 if (drawer.id === socket.id) {
@@ -195,7 +195,7 @@ io.on("connection", (socket) => {
 
                 io.in(roomId).emit("update messages", `${player.name} have guessed word +${score}`, "points");
                 io.in(roomId).emit("update messages", `${drawer.name} get +15 for ${player.name}'s guess`, "points");
-                io.in(roomId).emit("update leaderboard", room.players);
+                io.in(roomId).emit("update leaderboard", room);
                 io.in(room.id).emit("new word", room, true);
             }
         }
@@ -218,11 +218,11 @@ io.on("connection", (socket) => {
                 }
                 else if (room.players.length <= 1 && room.started) {
                     io.in(room.id).emit("game over");
-                    io.in(room.id).emit("update leaderboard", room.players);
+                    io.in(room.id).emit("update leaderboard", room);
                     return;
                 } else {
                     io.in(roomId).emit("update messages", `${playerLeft.name} Left the room`, "alert");
-                    io.in(roomId).emit("update leaderboard", room.players);
+                    io.in(roomId).emit("update leaderboard", room);
 
                     if (playerLeft.id == room.host) {
                         room.host = room.players[0].id;

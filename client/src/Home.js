@@ -56,15 +56,15 @@ const Home = () => {
                         value={userName}
                         onChange={e => setUserName(e.target.value)}
                         placeholder='Player2019'
-                        className="px-4 py-2 rounded-2xl transition-all text-xl font-bold outline-none text-center focus:border-yellow-400 border-b-4"
+                        className="input rounded-2xl focus:border-yellow-400 "
                     />
 
-                    {/* <button onClick={joinPublicRoom} className="cursor-pointer transition-all text-xl font-semibold bg-yellow-500 text-white px-8 py-2 rounded-r-xl border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-1 hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-1">Start</button> */}
+                    {/* <button onClick={joinPublicRoom} className="button primary px-6 py-2 rounded-xl">Start</button> */}
                 </div>
             </div>
 
-            <div className="m-auto w-full  bg-blue-200/50 backdrop-blur rounded-2xl border-yellow-400 border-b-4 mt-12 shadow-lg">
-                <div className="w-full text-2xl font-bold bg-yellow-400 text-white px-6 py-2 rounded-2xl border-yellow-500 border-b-4">Private Room</div>
+            <div className="m-auto mt-12 container">
+                <div className="heading primary">Private Room</div>
                 <div>
                     <div className="flex flex-wrap gap-2 justify-center p-10">
                         <form onSubmit={event => joinRoom(event)} className='flex'>
@@ -76,12 +76,12 @@ const Home = () => {
                                 value={roomId}
                                 onChange={e => setRoomId(parseInt(e.target.value))}
                                 placeholder='eg. 1234'
-                                className="px-4 py-2 w-64 rounded-l-xl transition-all text-xl font-bolder outline-none text-center focus:border-b-yellow-600 border-b-4"
+                                className="input w-64 rounded-l-xl  focus:border-b-yellow-600"
                             />
-                            <button className="cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white px-6 py-2 rounded-r-xl border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]">Join</button>
+                            <button className="button primary px-6 py-2 rounded-r-xl">Join</button>
                         </form>
 
-                        <button onClick={hostRoom} className="cursor-pointer transition-all text-xl font-bold bg-orange-500 text-white px-6 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]">host</button>
+                        <button onClick={hostRoom} className="button secondary px-6 py-2 rounded-xl">host</button>
                     </div>
                 </div>
 

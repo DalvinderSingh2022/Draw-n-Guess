@@ -16,7 +16,7 @@ const NavBar = () => {
     }, []);
 
     return (
-        <nav className={`${room?.currentWord ? "py-2" : "py-6"} px-2 mdpx-6 text-center relative text-white text-3xl font-bold m-auto bg-yellow-400`}>
+        <nav className={`${room?.currentWord ? "py-2" : "py-6"} px-2 mdpx-6 text-center relative  text-3xl font-bold m-auto primary`}>
             {room?.currentWord
                 ?
                 <div className='max-w-4xl m-auto flex items-center justify-between'>

@@ -14,7 +14,7 @@ const Clock = () => {
 
     return (
         time >= 0 && time <= 60
-            ? <span className='bg-orange-400 border-orange-500 border-b-4 text-white font-bold w-14 text-xl text-bold aspect-square grid place-items-center rounded-full ' >
+            ? <span className='secondary border-b-4  font-bold w-14 text-xl text-bold aspect-square grid place-items-center rounded-full ' >
                 {time}
             </span >
             : null

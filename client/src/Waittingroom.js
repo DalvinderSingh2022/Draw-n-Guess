@@ -7,10 +7,10 @@ const Waittingroom = () => {
   const [room, setRoom] = useState(null);
 
   const startGame = () => {
-    if (room.players.length < 2) {
-      alert("atlest 2 players requied to start game");
-      return;
-    }
+    // if (room.players.length < 2) {
+    //   alert("atlest 2 players requied to start game");
+    //   return;
+    // }
 
     socket.emit("start game", room.id);
   }
@@ -35,15 +35,15 @@ const Waittingroom = () => {
           ?
           <div className="max-w-2xl m-auto py-12 px-2">
 
-            <div className="m-auto  bg-blue-200/50 backdrop-blur rounded-2xl w-full border-yellow-400 border-b-4 shadow-lg">
-              <span className="flex justify-between text-2xl font-bold bg-yellow-400 text-white px-6 py-2 rounded-2xl border-yellow-500 border-b-4">
+            <div className="m-auto shadow-lg container">
+              <div className="heading primary">
                 <span>Room Id: {room?.id}</span>
                 <span>{room?.players.length}/{room?.maxPlayers}</span>
-              </span>
+              </div>
 
               <div className="flex flex-col gap-3 px-6 py-4">
                 {room?.players?.map(player =>
-                  <div key={player.id} className='bg-yellow-400 text-xl font-bold text-white p-2 ps-4 rounded-xl flex justify-between items-center'>
+                  <div key={player.id} className='bg-yellow-400 text-xl font-bold  p-2 ps-4 rounded-xl flex justify-between items-center'>
                     <span>{player.name}{player.id === room.host ? " (host)" : ""}</span>
                     <img className='w-12 aspect-square rounded-2xl' src={player.image || "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"} alt={player.name} />
                   </div>
@@ -52,8 +52,8 @@ const Waittingroom = () => {
             </div>
 
             <div className="flex justify-center gap-4 mt-2">
-              {room?.host === socket.id && <button onClick={startGame} className="cursor-pointer transition-all text-xl font-bold bg-yellow-500 text-white px-8 py-2 rounded-xl border-yellow-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]">Start Game</button>}
-              <button onClick={() => window.location.reload()} className="cursor-pointer transition-all text-xl font-bold bg-orange-500 text-white px-8 py-2 rounded-xl border-orange-600 border-b-4 hover:brightness-110 hover:-translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px]">Exit Room</button>
+              {room?.host === socket.id && <button onClick={startGame} className="button primary px-8 py-2 rounded-xl">Start Game</button>}
+              <button onClick={() => window.location.reload()} className="button secondary px-8 py-2 rounded-xl">Exit Room</button>
             </div>
           </div>
 

@@ -3,3 +3,40 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+* {
+    font-family: Play, sans-serif;
+    @apply text-white;
+}
+
+.button {
+    @apply hover:brightness-110 hover:translate-y-[2px] hover:border-b-4 active:border-b-2 active:brightness-90 active:translate-y-[2px] cursor-pointer transition-all text-xl font-bold border-b-4;
+}
+
+.button.primary {
+    @apply bg-yellow-500 border-yellow-600;
+}
+
+.button.secondary {
+    @apply bg-orange-500 border-orange-600;
+}
+
+.primary {
+    @apply bg-yellow-400 border-yellow-500;
+}
+
+.secondary {
+    @apply bg-orange-400 border-orange-500;
+}
+
+.input {
+    @apply px-4 py-2 transition-all text-xl font-semibold outline-none text-center border-b-4 text-black/90;
+}
+
+.container {
+    @apply w-full bg-blue-200/50 backdrop-blur rounded-2xl border-yellow-400 border-b-4 shadow-xl;
+}
+
+.heading {
+    @apply w-full text-2xl font-bold px-6 py-2 rounded-2xl border-b-4 flex justify-between;
+}
