@@ -2,10 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { socket } from './App';
 
 const messagStyle = {
-    you: "rounded-br-none bg-blue-500 self-end text-white",
-    others: "rounded-bl-none bg-white",
-    event: "bg-yellow-500 self-center text-white",
-    alert: "bg-red-500 self-center text-white"
+    you: "rounded-br-none bg-blue-500 self-end",
+    others: "rounded-bl-none bg-white self-start text-black",
+    event: "bg-yellow-500",
+    alert: "bg-red-500",
+    points: "bg-green-500"
 }
 
 const Messages = ({ roomId }) => {
@@ -42,8 +43,8 @@ const Messages = ({ roomId }) => {
             <div className="w-full text-center text-2xl font-bold bg-yellow-400 text-white px-6 py-2 rounded-2xl border-yellow-500 border-b-4">Messages</div>
 
             <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2' ref={messagesRef}>
-                {messages.map(message => (
-                    <div key={message.sender + message.type + message.text} className={`${messagStyle[message.type]} rounded-full px-4 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
+                {messages.map((message, index) => (
+                    <div key={index} className={`${messagStyle[message.type]} self-center text-white rounded-full px-4 py-1 w-fit`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}
             </div>
 

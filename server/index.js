@@ -193,8 +193,8 @@ io.on("connection", (socket) => {
                 player.guessed = true;
                 drawer.score += 15;
 
-                io.in(roomId).emit("update messages", `have guessed word +${score}`, "event");
-                io.in(roomId).emit("update messages", `${drawer.name} get +15 for ${player.name}'s guess`, "event");
+                io.in(roomId).emit("update messages", `${player.name} have guessed word +${score}`, "points");
+                io.in(roomId).emit("update messages", `${drawer.name} get +15 for ${player.name}'s guess`, "points");
                 io.in(roomId).emit("update leaderboard", room.players);
                 io.in(room.id).emit("new word", room, true);
             }
