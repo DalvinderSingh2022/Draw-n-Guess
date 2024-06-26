@@ -7,10 +7,10 @@ const Waittingroom = () => {
   const [room, setRoom] = useState(null);
 
   const startGame = () => {
-    // if (room.players.length < 2) {
-    //   alert("atlest 2 players requied to start game");
-    //   return;
-    // }
+    if (room.players.length < 2) {
+      alert("atlest 2 players requied to start game");
+      return;
+    }
 
     socket.emit("start game", room.id);
   }
@@ -51,9 +51,9 @@ const Waittingroom = () => {
               </div>
             </div>
 
-            <div className="flex justify-center gap-4 mt-2">
+            <div className="flex justify-center gap-4 mt-6">
               {room?.host === socket.id && <button onClick={startGame} className="button primary px-8 py-2 rounded-xl">Start Game</button>}
-              <button onClick={() => window.location.reload()} className="button secondary px-8 py-2 rounded-xl">Exit Room</button>
+              <button onClick={() => socket.emit("leave room", room.id)} className="button secondary px-8 py-2 rounded-xl">Leave Room</button>
             </div>
           </div>
 

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Home from './Home';
 import NavBar from './NavBar';
+import Waittingroom from './Waittingroom';
+import Loading from './Loading';
 
 import { io } from 'socket.io-client';
-import Waittingroom from './Waittingroom';
 export const socket = io.connect('http://localhost:4000/');
 
 const App = () => {
@@ -13,8 +14,14 @@ const App = () => {
         socket.on("joined", (room) => {
             setJoined(true);
         });
+        socket.on("leaved", (room) => {
+            setJoined(false);
+        });
 
-        return () => socket.off("joined");
+        return () => {
+            socket.off("joined");
+            socket.off("leaved");
+        };
     }, []);
 
     return (
@@ -25,6 +32,7 @@ const App = () => {
                     ? <Waittingroom />
                     : <Home />
             }
+            <Loading />
         </main>
     )
 }

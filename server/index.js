@@ -23,6 +23,8 @@ io.on("connection", (socket) => {
     // });
 
     socket.on("host room", (userName, image) => {
+        socket.emit("set loading", 'Hosting a new Room');
+
         let roomId = Math.floor((Math.random() * 9000) + 1000);
         while (rooms[roomId]) {
             roomId = Math.floor((Math.random() * 9000) + 1000);
@@ -52,18 +54,22 @@ io.on("connection", (socket) => {
         socket.join(roomId);
 
         socket.emit("joined", room);
+        socket.emit("set loading", false);
         console.log("hosted roomId: " + roomId);
     });
 
     socket.on("join room", (roomId, userName, image) => {
+        socket.emit("set loading", `Searching for Room id:${roomId}`);
         const room = rooms[roomId];
 
         if (!room) {
+            socket.emit("set loading", `Room With id ${roomId} not Found`);
             socket.emit("invalid room", `${roomId} not found`);
         } else {
             if (room.players.length >= room.maxPlayers) {
                 socket.emit("invalid room", `${roomId} is full`);
             } else {
+                socket.emit("set loading", `Joinning Room ${roomId}`);
                 room.players.push({
                     name: userName,
                     id: socket.id,
@@ -74,6 +80,7 @@ io.on("connection", (socket) => {
                 socket.join(roomId);
 
                 socket.emit("joined", room);
+                socket.emit("set loading", false);
 
                 io.in(roomId).emit("update leaderboard", room);
                 io.in(roomId).emit("update messages", `${userName} Join the room`, "event");
@@ -88,9 +95,12 @@ io.on("connection", (socket) => {
     });
 
     socket.on("start game", (roomId) => {
+        socket.emit("set loading", `Setting Up room`);
         rooms[roomId].started = true;
 
+
         io.in(roomId).emit("updated room", rooms[roomId]);
+        socket.emit("set loading", false);
         io.in(roomId).emit("update leaderboard", rooms[roomId]);
 
         nextRound(roomId);
@@ -201,37 +211,52 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("add loading", (loadingMsg) => {
+        socket.emit("set loading", loadingMsg);
+    });
+
+    const leaveRoom = (room, playerLeft) => {
+        const roomId = room.id;
+        room.players = room.players.filter(player => (player.id !== playerLeft.id));
+
+        if (room.players.length <= 0) {
+            rooms = rooms.filter(room => room.id !== roomId);
+        }
+        else if (room.players.length <= 1 && room.started) {
+            io.in(roomId).emit("game over");
+            io.in(roomId).emit("update leaderboard", room);
+        } else {
+            io.in(roomId).emit("update messages", `${playerLeft.name} Left the room`, "alert");
+            io.in(roomId).emit("update leaderboard", room);
+
+            if (playerLeft.id == room.host) {
+                room.host = room.players[0].id;
+                io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
+            }
+        }
+
+        socket.emit("set loading", false);
+        socket.emit("leaved", room);
+        io.in(roomId).emit("updated room", room);
+    }
+
+    socket.on("leave room", (roomId) => {
+        socket.emit("set loading", 'Leaving Room');
+
+        const room = rooms[roomId];
+        const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
+
+        leaveRoom(room, playerLeft);
+    });
+
     socket.on("disconnect", () => {
         console.log("disconnected : " + socket.id);
 
         rooms.map(room => {
-            let playerLeft = undefined;
-            const newPlayers = [];
-            const roomId = room.id;
-
-            room.players.map(player => (player.id === socket.id) ? playerLeft = player : newPlayers.push(player));
-            room.players = newPlayers;
+            const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
 
             if (playerLeft) {
-                if (room.players.length <= 0) {
-                    rooms = rooms.filter(room => room.id !== roomId);
-                }
-                else if (room.players.length <= 1 && room.started) {
-                    io.in(room.id).emit("game over");
-                    io.in(room.id).emit("update leaderboard", room);
-                    return;
-                } else {
-                    io.in(roomId).emit("update messages", `${playerLeft.name} Left the room`, "alert");
-                    io.in(roomId).emit("update leaderboard", room);
-
-                    if (playerLeft.id == room.host) {
-                        room.host = room.players[0].id;
-
-                        io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
-                    }
-
-                    io.in(roomId).emit("updated room", room);
-                }
+                leaveRoom(room, playerLeft);
             }
         });
     });

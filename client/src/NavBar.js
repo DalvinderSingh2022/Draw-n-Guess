@@ -12,7 +12,14 @@ const NavBar = () => {
             setShow(show);
         });
 
-        return () => socket.off("new word");
+        socket.on("leaved", (room) => {
+            setRoom({ ...room, currentWord: '' });
+        });
+
+        return () => {
+            socket.off("new word");
+            socket.off("leaved");
+        }
     }, []);
 
     return (

@@ -34,7 +34,7 @@ const Home = () => {
             alert(msg);
         });
 
-        return () => socket.off("invalid room")
+        return () => socket.off("invalid room");
     }, []);
 
     return (

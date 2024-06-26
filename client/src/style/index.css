@@ -40,3 +40,7 @@
 .heading {
     @apply w-full text-2xl font-bold px-6 py-2 rounded-2xl border-b-4 flex justify-between;
 }
+
+.fixed_container {
+    @apply z-50 w-screen h-screen fixed flex flex-col top-0 left-0;
+}
