@@ -46,7 +46,7 @@ const Waittingroom = () => {
                 {room?.players?.map(player =>
                   <div key={player.id} className={`${player.id !== socket.id ? "primary" : "secondary"} text-xl font-bold  p-2 ps-4 rounded-xl flex justify-between items-center`}>
                     <span>{player.name}{player.id === room.host ? " (host)" : ""}</span>
-                    <img className='w-12 aspect-square rounded-2xl' src={player.image || "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"} alt={player.name} />
+                    <img className='w-12 aspect-square rounded-2xl' src={player.image} alt={player.name} onError={(e) => e.target.src = "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"} />
                   </div>
                 )}
               </div>
