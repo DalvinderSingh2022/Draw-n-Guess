@@ -130,6 +130,10 @@ const Canvas = () => {
     }, [room]);
 
     useEffect(() => {
+        socket.emit("get room");
+    }, []);
+
+    useEffect(() => {
         socket.on("updated room", (room) => {
             setRoom(room);
             setTurn(room.players[room.turnIndex - 1]?.id === socket.id);

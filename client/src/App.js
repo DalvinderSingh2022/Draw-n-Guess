@@ -3,6 +3,7 @@ import Home from './Home';
 import NavBar from './NavBar';
 import Waittingroom from './Waittingroom';
 import Loading from './Loading';
+import Modal from './Modal';
 
 import { io } from 'socket.io-client';
 export const socket = io.connect('http://localhost:4000/');
@@ -33,6 +34,7 @@ const App = () => {
                     : <Home />
             }
             <Loading />
+            <Modal />
         </main>
     )
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { socket } from './App';
 
 const Home = () => {
@@ -12,30 +12,12 @@ const Home = () => {
 
     const joinRoom = (event) => {
         event.preventDefault();
-        if (!userName) {
-            alert("userName can't be null");
-            return;
-        }
-
         socket.emit("join room", roomId, userName, image);
     }
 
     const hostRoom = () => {
-        if (!userName) {
-            alert("userName can't be null");
-            return;
-        }
-
         socket.emit("host room", userName, image);
     }
-
-    useEffect(() => {
-        socket.on("invalid room", (msg) => {
-            alert(msg);
-        });
-
-        return () => socket.off("invalid room");
-    }, []);
 
     return (
         <div className="max-w-2xl m-auto py-12 px-2">

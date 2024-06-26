@@ -23,6 +23,11 @@ io.on("connection", (socket) => {
     // });
 
     socket.on("host room", (userName, image) => {
+        if (!userName) {
+            socket.emit("set alert", 'userName can not be null');
+            return;
+        }
+
         socket.emit("set loading", 'Hosting a new Room');
 
         let roomId = Math.floor((Math.random() * 9000) + 1000);
@@ -55,19 +60,23 @@ io.on("connection", (socket) => {
 
         socket.emit("joined", room);
         socket.emit("set loading", false);
-        console.log("hosted roomId: " + roomId);
     });
 
     socket.on("join room", (roomId, userName, image) => {
+        if (!userName) {
+            socket.emit("set alert", 'userName can not be null');
+            return;
+        }
+
         socket.emit("set loading", `Searching for Room id:${roomId}`);
         const room = rooms[roomId];
 
         if (!room) {
             socket.emit("set loading", `Room With id ${roomId} not Found`);
-            socket.emit("invalid room", `${roomId} not found`);
+            socket.emit("set alert", `Room With id ${roomId} not Found`);
         } else {
             if (room.players.length >= room.maxPlayers) {
-                socket.emit("invalid room", `${roomId} is full`);
+                socket.emit("set alert", `${roomId} is full`);
             } else {
                 socket.emit("set loading", `Joinning Room ${roomId}`);
                 room.players.push({
@@ -95,6 +104,11 @@ io.on("connection", (socket) => {
     });
 
     socket.on("start game", (roomId) => {
+        if (rooms[roomId].players.length < 2) {
+            socket.emit("set alert", "atlest 2 players requied to start game");
+            return;
+        }
+
         socket.emit("set loading", `Setting Up room`);
         rooms[roomId].started = true;
 
@@ -112,7 +126,7 @@ io.on("connection", (socket) => {
         if (room) {
             if (room.round >= room.maxRounds) {
                 io.in(roomId).emit("game over");
-                io.in(room.id).emit("update leaderboard", room);
+                io.in(roomId).emit("update leaderboard", room);
             } else {
                 room.round = room.round + 1;
                 room.turnIndex = 0;
@@ -217,24 +231,26 @@ io.on("connection", (socket) => {
 
     const leaveRoom = (room, playerLeft) => {
         const roomId = room.id;
-        room.players = room.players.filter(player => (player.id !== playerLeft.id));
 
         if (room.players.length <= 0) {
             rooms = rooms.filter(room => room.id !== roomId);
         }
-        else if (room.players.length <= 1 && room.started) {
-            io.in(roomId).emit("game over");
-            io.in(roomId).emit("update leaderboard", room);
-        } else {
+        else if (room.started) {
             io.in(roomId).emit("update messages", `${playerLeft.name} Left the room`, "alert");
-            io.in(roomId).emit("update leaderboard", room);
 
             if (playerLeft.id == room.host) {
                 room.host = room.players[0].id;
                 io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
             }
-        }
 
+            if (playerLeft.id == room.players[room.turnIndex - 1]?.id) {
+                room.timer = 0;
+                io.in(roomId).emit("update messages", `${playerLeft.name} turn skipped`, "alert");
+            }
+        }
+        room.players = room.players.filter(player => (player.id !== playerLeft.id));
+
+        io.in(roomId).emit("update leaderboard", room);
         socket.emit("set loading", false);
         socket.emit("leaved", room);
         io.in(roomId).emit("updated room", room);
@@ -242,6 +258,7 @@ io.on("connection", (socket) => {
 
     socket.on("leave room", (roomId) => {
         socket.emit("set loading", 'Leaving Room');
+        socket.leave(roomId);
 
         const room = rooms[roomId];
         const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
@@ -256,6 +273,7 @@ io.on("connection", (socket) => {
             const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
 
             if (playerLeft) {
+                socket.leave(room.id);
                 leaveRoom(room, playerLeft);
             }
         });

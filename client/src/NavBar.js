@@ -7,6 +7,10 @@ const NavBar = () => {
     const [show, setShow] = useState(false);
 
     useEffect(() => {
+        socket.on("updated room", (room) => {
+            setRoom(room);
+        });
+
         socket.on("new word", (room, show) => {
             setRoom(room);
             setShow(show);
@@ -17,6 +21,7 @@ const NavBar = () => {
         });
 
         return () => {
+            socket.off("updated room");
             socket.off("new word");
             socket.off("leaved");
         }
