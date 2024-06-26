@@ -43,12 +43,12 @@ const Waittingroom = () => {
               </div>
 
               <div className="flex flex-col gap-3 px-6 py-4">
-                {room?.players?.map(player =>
+                {room ? (room.players.map(player =>
                   <div key={player.id} className={`${player.id !== socket.id ? "primary" : "secondary"} text-xl font-bold  p-2 ps-4 rounded-xl flex justify-between items-center`}>
                     <span>{player.name}{player.id === room.host ? " (host)" : ""}</span>
                     <img className='w-12 aspect-square rounded-2xl' src={player.image} alt={player.name} onError={(e) => e.target.src = "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"} />
                   </div>
-                )}
+                )) : <div className="rounded-full border-4 border-transparent border-b-orange-500 w-8 aspect-square animate-spin m-auto"></div>}
               </div>
             </div>
 

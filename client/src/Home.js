@@ -6,17 +6,14 @@ import { FaUsers } from "react-icons/fa";
 const Home = () => {
     const [userName, setUserName] = useState('');
     const [roomId, setRoomId] = useState(undefined);
-    const [publicRooms, setPublicRooms] = useState([]);
+    const [publicRooms, setPublicRooms] = useState(null);
     const [create, setCreate] = useState(false);
     const [image, setImage] = useState();
 
-    const joinRoom = (event) => {
-        event.preventDefault();
-        const Id = event.target.getAttribute("data-roomid") || (roomId);
-
+    const joinRoom = (roomId) => {
         socket.emit("add loading", `Searching for Room id:${roomId}`);
         localStorage.setItem("userObj", JSON.stringify({ userName, image }));
-        socket.emit("join room", parseInt(Id), userName, image);
+        socket.emit("join room", parseInt(roomId), userName, image);
     }
 
     const hostRoom = (event) => {
@@ -79,7 +76,7 @@ const Home = () => {
                     <div>Join Room</div>
                     <button onClick={() => setCreate(true)} className="button secondary px-5 py-1 rounded-xl -mr-3">Create</button>
                 </div>
-                <form onSubmit={event => joinRoom(event)} className="flex justify-center p-8">
+                <form onSubmit={() => joinRoom(parseInt(roomId))} className="flex justify-center p-8">
                     <input
                         required
                         min={1000}
@@ -97,9 +94,9 @@ const Home = () => {
             <div className="m-auto mt-8 container">
                 <div className="heading primary text-center">Public Rooms</div>
                 <div className="flex flex-col gap-3 px-6 py-4">
-                    {publicRooms.length ?
+                    {publicRooms ? (publicRooms.length ?
                         publicRooms.map(room =>
-                            <div onClick={joinRoom} data-roomid={room.id} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
+                            <div onClick={() => joinRoom(parseInt(room.id))} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
                                 <span>Room Id: {room.id}</span>
                                 <div className="flex gap-2">
                                     <span>Round {room.round} of {room.maxRounds}</span> |
@@ -107,7 +104,7 @@ const Home = () => {
                                 </div>
                             </div>)
                         : <div className='text-center text-xl text-yellow-500'>No Public Room Available</div>
-                    }
+                    ) : <div className="rounded-full border-4 border-transparent border-b-yellow-500 w-8 aspect-square animate-spin m-auto"></div>}
                 </div>
             </div>
 
