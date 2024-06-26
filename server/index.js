@@ -248,7 +248,7 @@ io.on("connection", (socket) => {
                 io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
             }
 
-            if (playerLeft.id == drawer.id) {
+            if (playerLeft.id == drawer?.id) {
                 room.timer = 0;
                 io.in(roomId).emit("update messages", `${playerLeft.name} turn skipped`, "alert");
             }
