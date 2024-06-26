@@ -7,7 +7,13 @@ const Waittingroom = () => {
   const [room, setRoom] = useState(null);
 
   const startGame = () => {
+    socket.emit("add loading", `Setting Up room`);
     socket.emit("start game", room.id);
+  }
+
+  const leaveRoom = () => {
+    socket.emit("add loading", 'Leaving Room');
+    socket.emit("leave room", room.id);
   }
 
   useEffect(() => {
@@ -48,7 +54,7 @@ const Waittingroom = () => {
 
             <div className="flex justify-center gap-4 mt-6">
               {room?.host === socket.id && <button onClick={startGame} className="button primary px-8 py-2 rounded-xl">Start Game</button>}
-              <button onClick={() => socket.emit("leave room", room.id)} className="button secondary px-8 py-2 rounded-xl">Leave Room</button>
+              <button onClick={leaveRoom} className="button secondary px-8 py-2 rounded-xl">Leave Room</button>
             </div>
           </div>
 

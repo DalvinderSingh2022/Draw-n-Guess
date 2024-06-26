@@ -7,6 +7,12 @@ import Gameover from './Gameover';
 import { socket } from './App';
 
 const Room = ({ roomId }) => {
+
+    const leaveRoom = () => {
+        socket.emit("add loading", 'Leaving Room');
+        socket.emit("leave room", roomId);
+    }
+
     return (
         <>
             <div className='max-w-5xl m-auto'>
@@ -17,7 +23,7 @@ const Room = ({ roomId }) => {
                     <Messages roomId={roomId} />
                 </div>
                 <div className="flex items-center py-4">
-                    <button onClick={() => socket.emit("leave room", roomId)} className="button secondary px-8 py-2 rounded-xl mx-auto">Leave Room</button>
+                    <button onClick={leaveRoom} className="button secondary px-8 py-2 rounded-xl mx-auto">Leave Room</button>
                 </div>
             </div>
             <Gameover />
