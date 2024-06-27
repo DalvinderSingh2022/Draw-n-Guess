@@ -2,14 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { socket } from './App';
 
 const Loading = () => {
-    const [loading, setLoading] = useState('');
+    const [loading, setLoading] = useState('Connecting To Server');
 
     useEffect(() => {
         socket.on("set loading", (loadingMsg) => {
             setLoading(loadingMsg);
         });
 
-        return () => socket.off("set loading");
+        socket.on("connected", () => {
+            setLoading(false);
+        });
+
+        return () => {
+            socket.off("set loading");
+            socket.off("connected");
+        };
     }, [loading]);
 
     return (

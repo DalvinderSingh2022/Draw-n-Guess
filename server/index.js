@@ -17,6 +17,7 @@ const rooms = {};
 
 io.on("connection", (socket) => {
     console.log("user connected : " + socket.id);
+    socket.emit("connected");
 
     socket.on("get public rooms", () => {
         socket.emit("public rooms", Object.values(rooms).filter(room => room.public));
