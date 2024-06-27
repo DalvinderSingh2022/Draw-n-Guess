@@ -10,7 +10,9 @@ const Home = () => {
     const [create, setCreate] = useState(false);
     const [image, setImage] = useState();
 
-    const joinRoom = (roomId) => {
+    const joinRoom = (roomId, event) => {
+        event.preventDefault();
+
         socket.emit("add loading", `Searching for Room id:${roomId}`);
         localStorage.setItem("userObj", JSON.stringify({ userName, image }));
         socket.emit("join room", parseInt(roomId), userName, image);
@@ -76,7 +78,7 @@ const Home = () => {
                     <div>Join Room</div>
                     <button onClick={() => setCreate(true)} className="button secondary px-5 py-1 rounded-xl -mr-3">Create</button>
                 </div>
-                <form onSubmit={() => joinRoom(parseInt(roomId))} className="flex justify-center p-8">
+                <form onSubmit={(event) => joinRoom(parseInt(roomId), event)} className="flex justify-center p-8">
                     <input
                         required
                         min={1000}
