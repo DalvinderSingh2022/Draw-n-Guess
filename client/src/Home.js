@@ -98,7 +98,7 @@ const Home = () => {
                 <div className="flex flex-col gap-3 px-6 py-4">
                     {publicRooms ? (publicRooms.length ?
                         publicRooms.map(room =>
-                            <div onClick={() => joinRoom(parseInt(room.id))} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
+                            <div onClick={(event) => joinRoom(parseInt(room.id), event)} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
                                 <span>Room Id: {room.id}</span>
                                 <div className="flex gap-2">
                                     <span>Round {room.round} of {room.maxRounds}</span> |
