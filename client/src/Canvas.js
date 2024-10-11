@@ -183,22 +183,22 @@ const Canvas = () => {
             <canvas className='border-b-4 rounded-lg my-2 primary' ref={canvasRef}></canvas>
             {turn &&
                 <div className='flex flex-col md:flex-row gap-6 justify-between p-4 mb-2 container'>
-                    <div className="grid w-full md:w-fit grid-rows-2 grid-flow-col gap-2 md:gap-1 h-fit md:h-20 cursor-pointer md:pt-2">
+                    <div className="grid grid-flow-col justify-center gap-2 md:gap-1 cursor-pointer md:pt-2">
                         {colors.map(color =>
-                            <button key={color} onClick={event => changeColor(event)} style={{ backgroundColor: color, borderWidth: "4px" }} className={`${color === drawingColor ? "primary" : ""} button rounded-full aspect-square p-3`}></button>
+                            <button key={color} onClick={event => changeColor(event)} style={{ backgroundColor: color }} className={`${color === drawingColor ? "primary" : ""} border-4 button rounded-full aspect-square p-3 w-8`}></button>
                         )}
                         <button onClick={(e) => changeTool(e, false)} className={`${isBrush ? "primary" : "secondary"} cursor-pointer button p-3 rounded-full row-span-2 h-12 m-auto grid place-items-center`}><FaEraser className='bg-transparent cursor-default' /></button>
                         <button onClick={(e) => changeTool(e, true)} className={`${!isBrush ? "primary" : "secondary"} cursor-pointer button p-3 rounded-full row-span-2 h-12 m-auto grid place-items-center`}><FaPaintBrush className='bg-transparent cursor-default' /></button>
                     </div>
 
-                    <div className="flex w-full md:w-fit justify-center items-center gap-4 h-fit md:h-20 cursor-pointer">
-                        <button className='button primary p-3 rounded-full' onClick={handleUndo}><FaUndo /></button>
-                        <button className='button primary p-3 rounded-full' onClick={handleClearCanvas}><FaTrash /></button>
-                        <button className='button primary p-3 rounded-full' onClick={handleRedo}><FaRedo /></button>
+                    <div className="flex md:w-fit justify-center items-center gap-2">
+                        <button className='button primary rounded-full w-12 aspect-square cursor-pointer grid place-items-center' onClick={handleUndo}><FaUndo /></button>
+                        <button className='button primary rounded-full w-12 aspect-square cursor-pointer grid place-items-center' onClick={handleClearCanvas}><FaTrash /></button>
+                        <button className='button primary rounded-full w-12 aspect-square cursor-pointer grid place-items-center' onClick={handleRedo}><FaRedo /></button>
                     </div>
-                    <div className="flex items-center justify-center gap-2 w-full md:w-fit h-fit md:h-20 cursor-pointer">
+                    <div className="flex items-center justify-center gap-1 w-full md:w-fit h-fit md:h-20 cursor-pointer">
                         {[5, 15, 30, 50, 100].map((width, index) =>
-                            <button key={width} data-width={width} onClick={event => changeWidth(event)} className={`${width !== drawingWidth ? "primary" : "secondary"} h-12 button aspect-square rounded-full grid place-items-center`}>
+                            <button key={width} data-width={width} onClick={event => changeWidth(event)} className={`${width !== drawingWidth ? "primary" : "secondary"} button rounded-full w-12 aspect-square cursor-pointer grid place-items-center`}>
                                 <div style={{ width: `${(index * 6 + 10)}px` }} className={`cursor-default aspect-square rounded-full bg-black/80`}></div>
                             </button>
                         )}

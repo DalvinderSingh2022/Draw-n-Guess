@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { socket } from './App';
 
 const messagStyle = {
@@ -12,14 +12,6 @@ const messagStyle = {
 const Messages = ({ roomId }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
-    const messagesRef = useRef(null);
-
-    useEffect(() => {
-        messagesRef?.current.addEventListener('DOMNodeInserted', event => {
-            const { currentTarget: target } = event;
-            target.scroll({ top: target.scrollHeight, behavior: 'smooth' });
-        });
-    }, []);
 
     useEffect(() => {
         socket.on('update messages', (text, type, sender) => {
@@ -45,7 +37,7 @@ const Messages = ({ roomId }) => {
                 <span>Rood Id: {roomId}</span>
             </div>
 
-            <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2' ref={messagesRef}>
+            <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2'>
                 {messages.map((message, index) => (
                     <div key={index} className={`rounded-full px-4 py-1 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}

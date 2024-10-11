@@ -5,23 +5,15 @@ const LeaderBoard = () => {
     const [room, setRoom] = useState();
 
     useEffect(() => {
-        socket.on("updated room", (room) => {
-            setRoom(room);
-        });
-
         socket.on("update leaderboard", (room) => {
             setRoom(room);
         });
 
-        return () => {
-            socket.off("update leaderboard");
-            socket.off("updated room");
-        }
+        return () => socket.off("update leaderboard");
     }, []);
 
     return (
         <div className='md:w-1/2 min-h-96 container'>
-
             <div className="heading primary">
                 <span>LeaderBoard</span>
                 {room && <span>{(room.players.findIndex(play => play.id === socket.id) + 1)}/{room.players.length}</span>}

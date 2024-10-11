@@ -49,9 +49,9 @@ const Home = () => {
     }, []);
 
     return (
-        <div className="max-w-2xl m-auto py-12 px-2">
+        <div className="max-w-2xl m-auto py-8 px-2">
 
-            <div className="flex flex-col items-center mb-12">
+            <div className="flex flex-col items-center">
                 <label htmlFor="image">
                     <input className='hidden' name='image' id='image' accept='image/*' type="file" onChange={(e) => setImage(URL.createObjectURL(e.target?.files?.[0]))} />
                     <img

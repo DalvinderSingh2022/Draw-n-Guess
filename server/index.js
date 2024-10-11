@@ -84,6 +84,7 @@ io.on("connection", (socket) => {
                     name: userName,
                     id: socket.id,
                     score: 0,
+                    guessed: false,
                     image
                 });
 
@@ -127,8 +128,7 @@ io.on("connection", (socket) => {
 
         if (room) {
             if (room.round >= room.maxRounds) {
-                io.in(roomId).emit("game over");
-                io.in(roomId).emit("update leaderboard", room);
+                io.in(roomId).emit("game over", room);
             } else {
                 room.round = room.round + 1;
                 room.turnIndex = 0;
