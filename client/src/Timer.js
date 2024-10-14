@@ -13,7 +13,7 @@ const Timer = () => {
     }, [timer]);
 
     return (
-        timer?.time >= 0
+        timer?.time > 0
             ? <div className='fixed_container justify-center backdrop-blur-lg bg-blue-200/20' >
                 <div className="my-auto flex items-center flex-col gap-4">
                     <h1 className='text-orange-500 text-4xl font-bold mb-4 text-center'>{timer.message}</h1>

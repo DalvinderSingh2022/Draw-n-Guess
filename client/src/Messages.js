@@ -31,15 +31,15 @@ const Messages = ({ roomId }) => {
     };
 
     return (
-        <div className='md:w-1/2 container'>
+        <div className='md:w-1/2 container mx-auto h-96 flex flex-col justify-between'>
             <div className="heading primary">
                 <span>Messages</span>
                 <span>Rood Id: {roomId}</span>
             </div>
 
-            <div className='flex flex-col h-96 overflow-y-auto px-4 py-2 gap-2'>
+            <div className='flex flex-col overflow-y-auto p-2 gap-1 mb-auto'>
                 {messages.map((message, index) => (
-                    <div key={index} className={`rounded-full px-4 py-1 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
+                    <div key={index} className={`rounded-3xl px-4 py-0.5 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}
             </div>
 

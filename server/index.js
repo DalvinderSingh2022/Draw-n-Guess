@@ -135,12 +135,12 @@ io.on("connection", (socket) => {
                 room.timer = 5;
                 room.currentWord = '';
                 io.to(roomId).emit("new word", room, false);
-                const callback = () => io.in(room.id).emit("set timer", room.timer, `Starting Round ${room.round}`);
+                const callback = () => io.in(roomId).emit("set timer", room.timer, `Starting Round ${room.round}`);
                 if (room.public) {
                     io.emit("public rooms", Object.values(rooms).filter(room => room.public));
                 }
 
-                updatingTimer(room, callback, false);
+                updatingTimer(room, callback);
                 io.in(roomId).emit("update messages", `Round ${room.round} started`, "event");
             }
         }
@@ -149,6 +149,16 @@ io.on("connection", (socket) => {
     const nextTurn = (roomId) => {
         const room = rooms[roomId];
 
+        if (room.players[room.turnIndex - 1]) {
+            const players = room.players;
+            const drawer = players[room.turnIndex - 1];
+            const guesses = (players.reduce((acc, player) => player.guessed === true ? acc + 1 : acc, -1));
+            drawer.score += ((15 * guesses) + (guesses === players.length - 1 ? 20 : 0));
+
+            io.in(roomId).emit("update messages", `${drawer.name} get +${(15 * guesses)} points ${guesses === players.length - 1 ? ", +20 bonus" : ""}`, "points");
+            io.in(roomId).emit("update leaderboard", room);
+        }
+
         if (room) {
             if (!room.players[room.turnIndex]?.id) {
                 nextRound(roomId);
@@ -156,27 +166,25 @@ io.on("connection", (socket) => {
                 room.currentWord = words[Math.floor(Math.random() * words.length)];
                 room.players.map(player => player.guessed = false);
                 room.turnIndex = room.turnIndex + 1;
-                room.timer = 10 + room.drawTime;
+                room.timer = 5 + room.drawTime;
                 const drawer = room.players[room.turnIndex - 1];
+                drawer.guessed = true;
+
                 const callback = () => {
                     io.to(roomId).except(drawer.id).emit("set timer", room.timer - room.drawTime, `${drawer?.name} is choosing word to draw`);
-                    if (drawer.id === socket.id) {
-                        socket.emit("set timer", room.timer - room.drawTime, `You have to draw ${room.currentWord}`);
-                    } else {
-                        socket.to(drawer.id).emit("set timer", room.timer - room.drawTime, `You have to draw ${room.currentWord}`);
-                    }
+                    (drawer.id === socket.id)
+                        ? socket.emit("set timer", room.timer - room.drawTime, `You have to draw ${room.currentWord}`)
+                        : socket.to(drawer.id).emit("set timer", room.timer - room.drawTime, `You have to draw ${room.currentWord}`);
 
-                    io.in(room.id).emit("set clock", room.timer);
+                    io.in(roomId).emit("set clock", room.timer);
                 }
 
                 io.in(roomId).emit("update leaderboard", room);
                 io.in(roomId).emit("updated room", room);
                 io.to(roomId).except(drawer.id).emit("new word", room, false);
-                if (drawer.id === socket.id) {
-                    socket.emit("new word", room, true);
-                } else {
-                    socket.to(drawer.id).emit("new word", room, true);
-                }
+                (drawer.id === socket.id)
+                    ? socket.emit("new word", room, true)
+                    : socket.to(drawer.id).emit("new word", room, true);
 
                 updatingTimer(room, callback);
                 io.in(roomId).emit("update messages", `${drawer.name} is drawing`, "event");
@@ -207,7 +215,7 @@ io.on("connection", (socket) => {
         const player = room.players.find(player => player.id === socket.id);
         const drawer = room.players[room.turnIndex - 1];
 
-        if (room.currentWord.toLowerCase() !== message.toLowerCase()) {
+        if (!message.toLowerCase().replaceAll(" ", "").includes(room.currentWord.toLowerCase().replaceAll(" ", ""))) {
             socket.to(roomId).emit("update messages", message, "others", player.name);
             socket.emit("update messages", message, "you");
         } else {
@@ -220,12 +228,16 @@ io.on("connection", (socket) => {
                 const score = room.timer;
                 player.score += score;
                 player.guessed = true;
-                drawer.score += 15;
 
                 io.in(roomId).emit("update messages", `${player.name} have guessed word +${score}`, "points");
-                io.in(roomId).emit("update messages", `${drawer.name} get +15 for ${player.name}'s guess`, "points");
                 io.in(roomId).emit("update leaderboard", room);
-                io.in(room.id).emit("new word", room, true);
+                (player.id === socket.id)
+                    ? socket.emit("new word", room, true)
+                    : socket.to(player.id).emit("new word", room, true);
+
+                if (room.players.every(player => player.guessed == true)) {
+                    room.timer = 0;
+                }
             }
         }
     });
