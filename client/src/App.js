@@ -6,7 +6,7 @@ import Loading from './Loading';
 import Modal from './Modal';
 
 import { io } from 'socket.io-client';
-export const socket = io.connect('http://localhost:4000/');
+export const socket = io.connect('https://drawnguessbackend.onrender.com/');
 
 const App = () => {
     const [joined, setJoined] = useState(false);
