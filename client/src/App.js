@@ -6,7 +6,7 @@ import Loading from './Loading';
 import Modal from './Modal';
 
 import { io } from 'socket.io-client';
-export const socket = io.connect('https://drawnguessbackend.onrender.com/');
+export const socket = io.connect(process.env.REACT_APP_BACKEND_URL);
 
 const App = () => {
     const [joined, setJoined] = useState(false);
