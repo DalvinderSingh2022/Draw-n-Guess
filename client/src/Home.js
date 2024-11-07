@@ -1,42 +1,96 @@
 import React, { useEffect, useState } from 'react';
 import { socket } from './App';
+import Cookies from 'js-cookie';
 
 import { FaUsers } from "react-icons/fa";
+import { RiDiceLine, RiImageAddLine } from "react-icons/ri";
+
+const userImages = [
+    'https://img.freepik.com/premium-vector/senior-man-avatar-smiling-elderly-man-with-beard-with-gray-hair-3d-vector-people-character-illustration-cartoon-minimal-style_365941-810.jpg',
+    'https://img.freepik.com/premium-vector/young-smiling-man-adam-avatar-3d-vector-people-character-illustration-cartoon-minimal-style_365941-687.jpg',
+    'https://img.freepik.com/premium-vector/happy-young-woman-watching-into-rounded-frame-isolated-white-illustration-render-style_365941-118.jpg',
+    'https://img.freepik.com/premium-vector/young-smiling-woman-mia-avatar-3d-vector-people-character-illustration-cartoon-minimal-style_365941-792.jpg',
+    'https://img.freepik.com/premium-vector/3d-vector-young-smiling-woman-with-light-sin-tone-brown-short-hair-user-avatar_624031-153.jpg',
+    'https://img.freepik.com/premium-vector/young-smiling-woman-jane-peeking-out-looking-from-round-hole-searching-concept-3d-vector-people-character-illustrationcartoon-minimal-style_365941-739.jpg',
+    'https://www.shutterstock.com/image-vector/young-smiling-indian-woman-traditional-600nw-2267275547.jpg',
+    'https://www.shutterstock.com/image-vector/smiling-old-woman-senior-lady-600nw-2271040901.jpg',
+    'https://www.shutterstock.com/image-vector/young-smiling-african-man-avatar-600nw-2264981753.jpg',
+    'https://www.shutterstock.com/image-vector/young-smiling-man-avatar-brown-600nw-2261401207.jpg',
+]
 
 const Home = () => {
-    const [userName, setUserName] = useState('');
     const [roomId, setRoomId] = useState(undefined);
     const [publicRooms, setPublicRooms] = useState(null);
     const [create, setCreate] = useState(false);
-    const [image, setImage] = useState();
+    const [user, setUser] = useState({
+        name: '',
+        image: userImages[Math.floor(Math.random() * userImages.length)]
+    });
 
     const joinRoom = (roomId, event) => {
         event.preventDefault();
+        const { name: userName, image } = user;
 
         socket.emit("add loading", `Searching for Room id:${roomId}`);
-        localStorage.setItem("userObj", JSON.stringify({ userName, image }));
         socket.emit("join room", parseInt(roomId), userName, image);
     }
 
     const hostRoom = (event) => {
         event.preventDefault();
         const { maxPlayers, maxRounds, drawTime, roomType } = event.target;
+        const { name: userName, image } = user;
 
         socket.emit("add loading", 'Hosting a new Room');
-        localStorage.setItem("userObj", JSON.stringify({ userName, image }));
-        socket.emit("host room", userName, image, maxPlayers.value, maxRounds.value, drawTime.value, roomType.checked,);
+        socket.emit("host room", userName, image, maxPlayers.value, maxRounds.value, drawTime.value, roomType.checked);
+    }
+
+    const getImageUrl = async (e) => {
+        if (!e.target.files.length) {
+            return;
+        }
+
+        socket.emit("add loading", 'Uploading Image');
+        const formData = new FormData();
+        formData.append("file", e.target.files[0]);
+        formData.append("upload_preset", "Draw-n-guess");
+        formData.append("cloud_name", "dydaxtrzd");
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/dydaxtrzd/image/upload`, {
+                method: 'POST',
+                body: formData,
+            });
+            const data = await response.json();
+            return data.url;
+        } catch (error) {
+            console.error("Error uploading image:", error);
+        } finally {
+            socket.emit("add loading", false);
+        }
+    };
+
+    const handleChange = async (e) => {
+        const name = e.target.name;
+        if (name === 'image') {
+            const url = await getImageUrl(e);
+            handleImage(url);
+            return;
+        }
+
+        setUser(prev => ({ ...prev, [name]: e.target.value }));
+        Cookies.set('drawnguess', JSON.stringify({ ...user, [name]: e.target.value }), { expires: 7 });
+    }
+
+    const handleImage = (url) => {
+        setUser(prev => ({ ...prev, image: url }));
+        Cookies.set('drawnguess', JSON.stringify({ ...user, image: url }), { expires: 7 });
     }
 
     useEffect(() => {
-        socket.emit("add loading", 'Checking for previous user');
-        if (localStorage.getItem("userObj")) {
-            const { userName, image } = JSON.parse(localStorage.getItem("userObj"));
-            setUserName(userName);
-            setImage(image);
-        } else {
-            setUserName("Player" + (new Date().getTime().toString()).slice(-6));
+        const userCookies = Cookies.get('drawnguess');
+        if (userCookies) {
+            setUser(JSON.parse(userCookies));
         }
-        socket.emit("add loading", false);
     }, []);
 
     useEffect(() => {
@@ -50,27 +104,29 @@ const Home = () => {
 
     return (
         <div className="max-w-2xl m-auto py-8 px-2">
-
             <div className="flex flex-col items-center">
-                <label htmlFor="image">
-                    <input className='hidden' name='image' id='image' accept='image/*' type="file" onChange={(e) => setImage(URL.createObjectURL(e.target?.files?.[0]))} />
+                <div className="relative">
+                    <label htmlFor="image" title='upload Image' className='button primary rounded-full p-2 absolute -right-1'>
+                        <RiImageAddLine />
+                    </label>
+                    <button title='random' className='button primary rounded-full p-2 absolute -right-5 top-10' onClick={() => handleImage(userImages[Math.floor(Math.random() * userImages.length)])}>
+                        <RiDiceLine />
+                    </button>
+                    <input className='hidden' name='image' id='image' accept='image/*' type="file" onChange={handleChange} />
                     <img
-                        className='w-40 aspect-square rounded-t-full ring-4 ring-yellow-400 cursor-pointer bg-white'
-                        src={image}
-                        alt={userName}
-                        onError={(e) => e.target.src = "https://as1.ftcdn.net/v2/jpg/00/64/67/52/1000_F_64675209_7ve2XQANuzuHjMZXP3aIYIpsDKEbF5dD.jpg"}
-                    />
-                </label>
-                <div>
-                    <input
-                        required
-                        type="text"
-                        value={userName}
-                        onChange={e => setUserName(e.target.value)}
-                        placeholder='Player2019'
-                        className="input rounded-2xl focus:border-yellow-400 "
+                        className='w-40 aspect-square rounded-t-full ring-4 ring-yellow-400 bg-white'
+                        src={user.image}
+                        alt={user.name}
                     />
                 </div>
+                <input
+                    type="text"
+                    name='name'
+                    value={user.name}
+                    onChange={handleChange}
+                    placeholder='username...'
+                    className="input rounded-2xl focus:border-yellow-400 relative -mt-1"
+                />
             </div>
 
             <div className="m-auto mt-12 container">
@@ -170,11 +226,9 @@ const Home = () => {
 
                             <button className='button secondary rounded-xl px-6 py-2'>host</button>
                         </div>
-
                     </form>
                 </div>
             }
-
         </div>
     )
 }
