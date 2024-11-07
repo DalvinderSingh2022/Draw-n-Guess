@@ -9,13 +9,13 @@ const Loading = () => {
             setLoading(loadingMsg);
         });
 
-        socket.on("connected", () => {
+        socket.on("connect", () => {
             setLoading(false);
         });
 
         return () => {
             socket.off("set loading");
-            socket.off("connected");
+            socket.off("connect");
         };
     }, [loading]);
 

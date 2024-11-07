@@ -2,12 +2,13 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const words = require("./config/words");
+require("dotenv").config({ path: 'C:/codes/Practice/draw-n-guess/server/.env' });
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'https://drawnguessds.netlify.app',
+        origin: process.env.ORIGIN,
         methods: ["GET", "POST"]
     }
 });
@@ -18,7 +19,6 @@ const rooms = {};
 
 io.on("connection", (socket) => {
     console.log("user connected : " + socket.id);
-    socket.emit("connected");
 
     socket.on("get public rooms", () => {
         socket.emit("public rooms", Object.values(rooms).filter(room => room.public));
@@ -109,16 +109,16 @@ io.on("connection", (socket) => {
     });
 
     socket.on("start game", (roomId) => {
-        if (rooms[roomId].players.length < 2) {
+        const room = rooms[roomId];
+        if (room.players.length < 2) {
             socket.emit("set alert", "atlest 2 players requied to start game");
             return;
         }
-        rooms[roomId].started = true;
+        room.started = true;
 
-
-        io.in(roomId).emit("updated room", rooms[roomId]);
+        io.in(roomId).emit("updated room", room);
         socket.emit("set loading", false);
-        io.in(roomId).emit("update leaderboard", rooms[roomId]);
+        io.in(roomId).emit("update leaderboard", room);
 
         nextRound(roomId);
     });
