@@ -275,15 +275,20 @@ io.on("connection", (socket) => {
         socket.emit("set loading", false);
         socket.emit("leaved", room);
         io.in(roomId).emit("updated room", room);
+        socket.leave(roomId);
     }
 
     socket.on("leave room", (roomId) => {
         socket.leave(roomId);
 
         const room = rooms[roomId];
-        const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
+        if (room) {
+            const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
 
-        leaveRoom(room, playerLeft);
+            if (playerLeft) {
+                leaveRoom(room, playerLeft);
+            }
+        }
     });
 
     socket.on("disconnect", () => {
@@ -293,7 +298,6 @@ io.on("connection", (socket) => {
             const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
 
             if (playerLeft) {
-                socket.leave(room.id);
                 leaveRoom(room, playerLeft);
             }
         });
