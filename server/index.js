@@ -2,12 +2,13 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const words = require("./config/words");
+const dotenv = require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "*",
+        origin: process.env.ORIGIN,
         methods: ["GET", "POST"]
     }
 });
