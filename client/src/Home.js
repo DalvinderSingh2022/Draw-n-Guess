@@ -82,8 +82,10 @@ const Home = () => {
     }
 
     const handleImage = (url) => {
-        setUser(prev => ({ ...prev, image: url }));
-        Cookies.set('drawnguess', JSON.stringify({ ...user, image: url }), { expires: 7 });
+        if (url) {
+            setUser(prev => ({ ...prev, image: url }));
+            Cookies.set('drawnguess', JSON.stringify({ ...user, image: url }), { expires: 7 });
+        }
     }
 
     useEffect(() => {
@@ -129,7 +131,7 @@ const Home = () => {
                 />
             </div>
 
-            <div className="m-auto mt-12 container">
+            <div className="m-auto mt-10 container">
                 <div className="heading primary items-center">
                     <div>Join Room</div>
                     <button onClick={() => setCreate(true)} className="button secondary px-5 py-1 rounded-xl -mr-3">Create</button>
