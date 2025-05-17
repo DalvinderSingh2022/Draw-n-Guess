@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { socket } from './App';
 
 const messagStyle = {
@@ -12,10 +12,15 @@ const messagStyle = {
 const Messages = ({ roomId }) => {
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
+    const messagesRef = useRef(null);
 
     useEffect(() => {
+        if (messagesRef.current) {
+            setTimeout(() => messagesRef.current.scrollTop = messagesRef.current.scrollHeight, 0);
+        }
+
         socket.on('update messages', (text, type, sender) => {
-            setMessages([...messages, { text, sender, type }]);
+            setMessages(prev => [...prev, { text, sender, type }]);
         });
 
         return () => socket.off("update messages");
@@ -37,7 +42,7 @@ const Messages = ({ roomId }) => {
                 <span>Rood Id: {roomId}</span>
             </div>
 
-            <div className='flex flex-col overflow-y-auto p-2 gap-1 mb-auto'>
+            <div className='flex flex-col overflow-y-auto p-2 gap-1 mb-auto' ref={messagesRef}>
                 {messages.map((message, index) => (
                     <div key={index} className={`rounded-3xl px-4 py-0.5 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
                 ))}

@@ -21,10 +21,10 @@ io.on("connection", (socket) => {
     console.log("user connected : " + socket.id);
 
     socket.on("get public rooms", () => {
-        socket.emit("public rooms", Object.values(rooms).filter(room => room.public));
+        socket.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
     });
 
-    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, public) => {
+    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, isPublic) => {
         if (!userName) {
             socket.emit("set alert", 'userName can not be null');
             return;
@@ -53,7 +53,7 @@ io.on("connection", (socket) => {
             timer: 0,
             currentWord: '',
             started: false,
-            public,
+            isPublic,
             id: roomId
         }
         rooms[roomId] = room;
@@ -61,8 +61,8 @@ io.on("connection", (socket) => {
         socket.join(roomId);
         socket.emit("joined", room);
         socket.emit("set loading", false);
-        if (room.public) {
-            io.emit("public rooms", Object.values(rooms).filter(room => room.public));
+        if (room.isPublic) {
+            io.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
         }
     });
 
@@ -71,39 +71,44 @@ io.on("connection", (socket) => {
             socket.emit("set alert", 'userName can not be null');
             return;
         }
+
         const room = rooms[roomId];
 
-        if (!room) {
+        if (roomId.length !== 4) {
+            socket.emit("set alert", 'Room Id must be of 4 digits');
+        }
+        else if (!room) {
             socket.emit("set alert", `Room With id ${roomId} not Found`);
-        } else {
-            if (room.players.length >= room.maxPlayers) {
-                socket.emit("set alert", `Room ${roomId} is full`);
-            } else {
-                socket.emit("set loading", `Joinning Room ${roomId}`);
-                room.players.push({
-                    name: userName,
-                    id: socket.id,
-                    score: 0,
-                    guessed: false,
-                    image
-                });
+        }
+        else if (room.players.length >= room.maxPlayers) {
+            socket.emit("set alert", `Room ${roomId} is full`);
+        }
+        else {
+            socket.emit("set loading", `Joinning Room ${roomId}`);
+            room.players.push({
+                name: userName,
+                id: socket.id,
+                score: 0,
+                guessed: false,
+                image
+            });
 
-                socket.join(roomId);
+            socket.join(roomId);
 
-                socket.emit("joined", room);
-                socket.emit("set loading", false);
+            socket.emit("joined", room);
+            socket.emit("set loading", false);
 
-                io.in(roomId).emit("update leaderboard", room);
-                io.in(roomId).emit("update messages", `${userName} Join the room`, "event");
-                if (room.public) {
-                    io.emit("public rooms", Object.values(rooms).filter(room => room.public));
-                }
+            io.in(roomId).emit("update leaderboard", room);
+            io.in(roomId).emit("update messages", `${userName} Join the room`, "event");
+            if (room.isPublic) {
+                io.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
             }
+
         }
     });
 
     socket.on("get room", () => {
-        const room = Object.values(rooms).filter(room => room.players.find(player => player.id === socket.id))?.[0];
+        const room = Object.values(rooms).find(room => room.players.find(player => player.id === socket.id));
 
         if (room) io.in(room.id).emit("updated room", room);
     });
@@ -136,8 +141,8 @@ io.on("connection", (socket) => {
                 room.currentWord = '';
                 io.to(roomId).emit("new word", room, false);
                 const callback = () => io.in(roomId).emit("set timer", room.timer, `Starting Round ${room.round}`);
-                if (room.public) {
-                    io.emit("public rooms", Object.values(rooms).filter(room => room.public));
+                if (room.isPublic) {
+                    io.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
                 }
 
                 updatingTimer(room, callback);
@@ -155,7 +160,9 @@ io.on("connection", (socket) => {
             const guesses = (players.reduce((acc, player) => player.guessed === true ? acc + 1 : acc, -1));
             drawer.score += ((15 * guesses) + (guesses === players.length - 1 ? 20 : 0));
 
-            io.in(roomId).emit("update messages", `${drawer.name} get +${(15 * guesses)} points ${guesses === players.length - 1 ? ", +20 bonus" : ""}`, "points");
+            if (guesses > 0) { 
+                io.in(roomId).emit("update messages", `${drawer.name} get +${(15 * guesses)} points ${guesses === players.length - 1 ? ", +20 bonus" : ""}`, "points");
+            }
             io.in(roomId).emit("update leaderboard", room);
         }
 
@@ -164,7 +171,7 @@ io.on("connection", (socket) => {
                 nextRound(roomId);
             } else {
                 room.currentWord = words[Math.floor(Math.random() * words.length)];
-                room.players.map(player => player.guessed = false);
+                room.players.forEach(player => player.guessed = false);
                 room.turnIndex = room.turnIndex + 1;
                 room.timer = 5 + room.drawTime;
                 const drawer = room.players[room.turnIndex - 1];
@@ -218,26 +225,28 @@ io.on("connection", (socket) => {
         if (!message.toLowerCase().replaceAll(" ", "").includes(room.currentWord.toLowerCase().replaceAll(" ", ""))) {
             socket.to(roomId).emit("update messages", message, "others", player.name);
             socket.emit("update messages", message, "you");
-        } else {
-            if (player.id === drawer.id) {
-                socket.emit("update messages", "You can't write word in chat", "alert");
-            }
-            else if (player.guessed) {
-                socket.emit("update messages", "You have already guessed", "alert");
-            } else {
-                const score = room.timer;
-                player.score += score;
-                player.guessed = true;
+            return;
+        }
 
-                io.in(roomId).emit("update messages", `${player.name} have guessed word +${score}`, "points");
-                io.in(roomId).emit("update leaderboard", room);
-                (player.id === socket.id)
-                    ? socket.emit("new word", room, true)
-                    : socket.to(player.id).emit("new word", room, true);
+        if (player.id === drawer.id) {
+            socket.emit("update messages", "You can't write word in chat", "alert");
+        }
+        else if (player.guessed) {
+            socket.emit("update messages", "You have already guessed", "alert");
+        }
+        else {
+            const score = room.timer;
+            player.score += score;
+            player.guessed = true;
 
-                if (room.players.every(player => player.guessed == true)) {
-                    room.timer = 0;
-                }
+            io.in(roomId).emit("update messages", `${player.name} have guessed word +${score}`, "points");
+            io.in(roomId).emit("update leaderboard", room);
+            (player.id === socket.id)
+                ? socket.emit("new word", room, true)
+                : socket.to(player.id).emit("new word", room, true);
+
+            if (room.players.every(player => player.guessed == true)) {
+                room.timer = 0;
             }
         }
     });
@@ -262,28 +271,28 @@ io.on("connection", (socket) => {
                 io.in(roomId).emit("update messages", `${room.players[0].name} is now host of room`, "event");
             }
 
-            if (playerLeft.id == drawer?.id) {
+            if (drawer && playerLeft.id == drawer.id) {
                 room.timer = 0;
                 io.in(roomId).emit("update messages", `${playerLeft.name} turn skipped`, "alert");
             }
         }
 
-        if (room.public) {
-            io.emit("public rooms", Object.values(rooms).filter(room => room.public));
+        if (room.isPublic) {
+            io.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
         }
+
         io.in(roomId).emit("update leaderboard", room);
         socket.emit("set loading", false);
         socket.emit("leaved", room);
         io.in(roomId).emit("updated room", room);
+
         socket.leave(roomId);
     }
 
     socket.on("leave room", (roomId) => {
-        socket.leave(roomId);
-
         const room = rooms[roomId];
         if (room) {
-            const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
+            const playerLeft = room.players.find(player => player.id === socket.id);
 
             if (playerLeft) {
                 leaveRoom(room, playerLeft);
@@ -294,13 +303,14 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("disconnected : " + socket.id);
 
-        Object.values(rooms).map(room => {
-            const playerLeft = room.players.filter(player => player.id === socket.id)?.[0];
+        for (const room of Object.values(rooms)) {
+            const playerLeft = room.players.find(player => player.id === socket.id);
 
             if (playerLeft) {
                 leaveRoom(room, playerLeft);
+                break;
             }
-        });
+        }
     });
 });
 

@@ -32,7 +32,7 @@ const Home = () => {
         const { name: userName, image } = user;
 
         socket.emit("add loading", `Searching for Room id:${roomId}`);
-        socket.emit("join room", parseInt(roomId), userName, image);
+        socket.emit("join room", roomId, userName, image);
     }
 
     const hostRoom = (event) => {
@@ -136,14 +136,14 @@ const Home = () => {
                     <div>Join Room</div>
                     <button onClick={() => setCreate(true)} className="button secondary px-5 py-1 rounded-xl -mr-3">Create</button>
                 </div>
-                <form onSubmit={(event) => joinRoom(parseInt(roomId), event)} className="flex justify-center p-8">
+                <form onSubmit={(event) => joinRoom(roomId, event)} className="flex justify-center p-8">
                     <input
                         required
-                        min={1000}
-                        max={9999}
+                        id='roomId'
+                        pattern='[0-9]{4}'
                         type="number"
                         value={roomId}
-                        onChange={e => setRoomId(parseInt(e.target.value))}
+                        onChange={e => setRoomId(e.target.value)}
                         placeholder='eg. 1234'
                         className="input w-64 rounded-l-xl  focus:border-b-yellow-600"
                     />
@@ -156,7 +156,7 @@ const Home = () => {
                 <div className="flex flex-col gap-3 px-6 py-4">
                     {publicRooms ? (publicRooms.length ?
                         publicRooms.map(room =>
-                            <div onClick={(event) => joinRoom(parseInt(room.id), event)} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
+                            <div onClick={(event) => joinRoom(room.id, event)} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
                                 <span>Room Id: {room.id}</span>
                                 <div className="flex gap-2">
                                     <span>Round {room.round} of {room.maxRounds}</span> |
