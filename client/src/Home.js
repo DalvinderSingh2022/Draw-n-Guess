@@ -37,11 +37,11 @@ const Home = () => {
 
     const hostRoom = (event) => {
         event.preventDefault();
-        const { maxPlayers, maxRounds, drawTime, roomType } = event.target;
+        const { maxPlayers, maxRounds, drawTime, roomType, roomName } = event.target;
         const { name: userName, image } = user;
 
         socket.emit("add loading", 'Hosting a new Room');
-        socket.emit("host room", userName, image, maxPlayers.value, maxRounds.value, drawTime.value, roomType.checked);
+        socket.emit("host room", userName, image, maxPlayers.value, maxRounds.value, drawTime.value, roomType.checked, roomName.value);
     }
 
     const getImageUrl = async (e) => {
@@ -156,12 +156,15 @@ const Home = () => {
                 <div className="flex flex-col gap-3 px-6 py-4">
                     {publicRooms ? (publicRooms.length ?
                         publicRooms.map(room =>
-                            <div onClick={(event) => joinRoom(room.id, event)} key={room.id} className='cursor-pointer primary text-xl font-bold  px-5 py-3 rounded-xl flex flex-wrap justify-between items-center'>
-                                <span>Room Id: {room.id}</span>
-                                <div className="flex gap-2">
-                                    <span>Round {room.round} of {room.maxRounds}</span> |
-                                    <span className='flex items-center gap-2'><FaUsers /> {room.players.length}/{room.maxPlayers}</span>
+                            <div onClick={(event) => joinRoom(room.id, event)} key={room.id} className='cursor-pointer primary text-xl font-bold px-5 py-2 rounded-xl flex flex-wrap justify-between items-center'>
+                                <div className="flex flex-col">
+                                    <span className='text-2xl'>{room.roomName}</span>
+                                    <span className='text-sm'>Round {room.round} of {room.maxRounds}</span>
                                 </div>
+                                <span className='flex items-center gap-2'>
+                                    <FaUsers />
+                                    {room.players.length}/{room.maxPlayers}
+                                </span>
                             </div>)
                         : <div className='text-center text-xl text-yellow-500'>No Public Room Available</div>
                     ) : <div className="rounded-full border-4 border-transparent border-b-yellow-500 w-8 aspect-square animate-spin m-auto"></div>}
@@ -177,6 +180,16 @@ const Home = () => {
                         </div>
 
                         <div className="flex flex-col items-center gap-2 py-4 px-8">
+
+                            <label htmlFor="roomName" className="w-full flex justify-between items-center">
+                                <input
+                                    required
+                                    type="text"
+                                    name="roomName"
+                                    id="roomName"
+                                    placeholder='Room name'
+                                    className='input m-auto focus:border-b-orange-400' />
+                            </label>
 
                             <label htmlFor="drawTime" className="w-full flex justify-between items-center">
                                 <span className='text-black/90 text-2xl font-bold'>DrawTime</span>

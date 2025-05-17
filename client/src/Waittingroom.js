@@ -38,7 +38,7 @@ const Waittingroom = () => {
 
             <div className="m-auto shadow-lg container">
               <div className="heading primary">
-                <span>Room Id: {room?.id}</span>
+                <span>{`${room?.roomName} (${room?.id})`}</span>
                 <span>{room?.players.length}/{room?.maxPlayers}</span>
               </div>
 

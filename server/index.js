@@ -24,9 +24,15 @@ io.on("connection", (socket) => {
         socket.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
     });
 
-    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, isPublic) => {
+    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, isPublic, roomName) => {
         if (!userName) {
             socket.emit("set alert", 'userName can not be null');
+            return;
+        }
+
+        const exisitngRoom = Object.values(rooms).find(room => room.roomName == roomName);
+        if (exisitngRoom) {
+            socket.emit("set alert", 'Room Name already in use');
             return;
         }
 
@@ -54,7 +60,8 @@ io.on("connection", (socket) => {
             currentWord: '',
             started: false,
             isPublic,
-            id: roomId
+            id: roomId,
+            roomName,
         }
         rooms[roomId] = room;
 
