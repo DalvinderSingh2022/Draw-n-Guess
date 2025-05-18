@@ -29,6 +29,25 @@ const Waittingroom = () => {
     return () => socket.off("updated room");
   }, []);
 
+  const inviteWhatsApp = () => {
+    const baseUrl = 'https://api.whatsapp.com/send?text=';
+    const message = `👋 *Hey!*
+
+  Remember how we used to play _Pictionary_? I just found this awesome online version called *Draw 'n Guess*! 🎮
+  
+  I've created a room for us — join me here:
+  🔗 https://drawnguessds.netlify.app/
+  
+  ${room ? `🆔 *Room ID: ${room.id}*` : ''}
+  
+  Let's see who's the better artist! 🎨😉`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const fullUrl = baseUrl + encodedMessage;
+    window.open(fullUrl, '_blank');
+  };
+
+
   return (
     <>
       {
@@ -37,9 +56,9 @@ const Waittingroom = () => {
           <div className="max-w-2xl m-auto py-12 px-2">
 
             <div className="m-auto shadow-lg container">
-              <div className="heading primary">
-                <span>{`${room?.roomName} (${room?.id})`}</span>
-                <span>{room?.players.length}/{room?.maxPlayers}</span>
+              <div className="heading primary items-center">
+                <span>Players: {room?.players.length}/{room?.maxPlayers}</span>
+                <button onClick={inviteWhatsApp} className="button secondary px-5 py-1 rounded-xl -mr-3">Invite</button>
               </div>
 
               <div className="flex flex-col gap-3 px-6 py-4">

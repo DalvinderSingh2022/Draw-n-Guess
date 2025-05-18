@@ -24,9 +24,9 @@ io.on("connection", (socket) => {
         socket.emit("public rooms", Object.values(rooms).filter(room => room.isPublic));
     });
 
-    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, isPublic, roomName) => {
+    socket.on("host room", (userName, image, maxPlayers, maxRounds, drawTime, isPublic, roomName = "") => {
         if (!userName) {
-            socket.emit("set alert", 'userName can not be null');
+            socket.emit("set alert", 'userName can not be Empty');
             return;
         }
 
@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
             started: false,
             isPublic,
             id: roomId,
-            roomName,
+            roomName: roomName || `Room${roomId}`,
         }
         rooms[roomId] = room;
 

@@ -183,7 +183,6 @@ const Home = () => {
 
                             <label htmlFor="roomName" className="w-full flex justify-between items-center">
                                 <input
-                                    required
                                     type="text"
                                     name="roomName"
                                     id="roomName"
