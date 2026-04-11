@@ -1,65 +1,79 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { socket } from './App';
+import React, { useEffect, useRef, useState } from "react";
+import { socket, useGame } from "./hooks/useGame";
 
 const messagStyle = {
-    you: "rounded-br-none bg-blue-500 self-end",
-    others: "rounded-bl-none bg-white self-start text-black/90",
-    event: "bg-yellow-500 self-center",
-    alert: "bg-red-500 self-center",
-    points: "bg-green-500 self-center"
-}
+  you: "rounded-br-none bg-blue-500 self-end",
+  others: "rounded-bl-none bg-white self-start text-black/90",
+  event: "bg-yellow-500 self-center",
+  alert: "bg-red-500 self-center",
+  points: "bg-green-500 self-center",
+};
 
-const Messages = ({ roomId }) => {
-    const [message, setMessage] = useState('');
-    const [messages, setMessages] = useState([]);
-    const messagesRef = useRef(null);
+const Messages = () => {
+  const { room } = useGame();
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const messagesRef = useRef(null);
 
-    useEffect(() => {
-        if (messagesRef.current) {
-            setTimeout(() => messagesRef.current.scrollTop = messagesRef.current.scrollHeight, 0);
-        }
+  useEffect(() => {
+    if (messagesRef.current) {
+      setTimeout(
+        () =>
+          (messagesRef.current.scrollTop = messagesRef.current.scrollHeight),
+        0,
+      );
+    }
 
-        socket.on('update messages', (text, type, sender) => {
-            setMessages(prev => [...prev, { text, sender, type }]);
-        });
+    socket.on("update messages", (text, type, sender) => {
+      setMessages((prev) => [...prev, { text, sender, type }]);
+    });
 
-        return () => socket.off("update messages");
-    }, [messages]);
+    return () => socket.off("update messages");
+  }, [messages]);
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-        if (message) {
-            socket.emit('new message', message, roomId);
-            setMessage('');
-        }
-    };
+    if (message) {
+      socket.emit("new message", message);
+      setMessage("");
+    }
+  };
 
-    return (
-        <div className='md:w-1/2 container mx-auto h-96 flex flex-col justify-between'>
-            <div className="heading primary">
-                <span>Messages</span>
-                <span>Rood Id: {roomId}</span>
-            </div>
+  return (
+    <div className="md:w-1/2 container mx-auto h-96 flex flex-col justify-between">
+      <div className="heading primary">
+        <span>Messages</span>
+        <span>Rood Id: {room?.id}</span>
+      </div>
 
-            <div className='flex flex-col overflow-y-auto p-2 gap-1 mb-auto' ref={messagesRef}>
-                {messages.map((message, index) => (
-                    <div key={index} className={`rounded-3xl px-4 py-0.5 w-fit ${messagStyle[message.type]}`}>{message.sender && (message.sender + ": ")}{message.text}</div>
-                ))}
-            </div>
+      <div
+        className="flex flex-col overflow-y-auto p-2 gap-1 mb-auto"
+        ref={messagesRef}
+      >
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`rounded-3xl px-4 py-0.5 w-fit ${messagStyle[message.type]}`}
+          >
+            {message.sender && message.sender + ": "}
+            {message.text}
+          </div>
+        ))}
+      </div>
 
-            <form onSubmit={event => handleSubmit(event)} className='flex'>
-                <input
-                    required
-                    type="text"
-                    value={message}
-                    onChange={e => setMessage(e.target.value)}
-                    placeholder='Message...'
-                    className="w-full px-4 py-2 rounded-b-xl text-lg font-semibold outline-none text-black/90"
-                />
-            </form>
-        </div>
-    )
-}
+      <form onSubmit={(event) => handleSubmit(event)} className="flex">
+        <input
+          required
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Message..."
+          className="w-full px-4 py-2 rounded-b-xl text-lg font-semibold outline-none text-black/90"
+        />
+      </form>
+    </div>
+  );
+};
 
 export default Messages;

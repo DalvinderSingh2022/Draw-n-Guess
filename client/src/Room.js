@@ -1,34 +1,38 @@
-import React from 'react';
+import React from "react";
 import Canvas from "./Canvas";
-import Messages from './Messages';
-import LeaderBoard from './LeaderBoard';
+import Messages from "./Messages";
+import LeaderBoard from "./LeaderBoard";
 import Timer from "./Timer";
-import Gameover from './Gameover';
-import { socket } from './App';
+import Gameover from "./Gameover";
+import { socket } from "./hooks/useGame";
 
-const Room = ({ roomId }) => {
+const Room = () => {
+  const leaveRoom = () => {
+    socket.emit("add loading", "Leaving Room");
+    socket.emit("leave room");
+  };
 
-    const leaveRoom = () => {
-        socket.emit("add loading", 'Leaving Room');
-        socket.emit("leave room", roomId);
-    }
-
-    return (
-        <>
-            <div className='max-w-5xl m-auto'>
-                <Canvas />
-                <Timer />
-                <div className='w-full flex p-2 gap-4 flex-col md:flex-row'>
-                    <LeaderBoard />
-                    <Messages roomId={roomId} />
-                </div>
-                <div className="flex items-center py-4">
-                    <button onClick={leaveRoom} className="button secondary px-8 py-2 rounded-xl mx-auto">Leave Room</button>
-                </div>
-            </div>
-            <Gameover />
-        </>
-    )
-}
+  return (
+    <>
+      <div className="max-w-5xl m-auto">
+        <Canvas />
+        <Timer />
+        <div className="w-full flex p-2 gap-4 flex-col md:flex-row">
+          <LeaderBoard />
+          <Messages />
+        </div>
+        <div className="flex items-center py-4">
+          <button
+            onClick={leaveRoom}
+            className="button secondary px-8 py-2 rounded-xl mx-auto"
+          >
+            Leave Room
+          </button>
+        </div>
+      </div>
+      <Gameover />
+    </>
+  );
+};
 
 export default Room;
