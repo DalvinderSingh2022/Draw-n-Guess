@@ -54,39 +54,34 @@ const Home = () => {
     );
   };
 
-  const getImageUrl = async (e) => {
-    if (!e.target.files.length) {
-      return;
-    }
-
-    socket.emit("add loading", "Uploading Image");
+  const getImageUrl = async (file) => {
     const formData = new FormData();
-    formData.append("file", e.target.files[0]);
+    formData.append("file", file);
     formData.append("upload_preset", "Draw-n-guess");
     formData.append("cloud_name", "dydaxtrzd");
 
     try {
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/dydaxtrzd/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        },
+        { method: "POST", body: formData },
       );
       const data = await response.json();
-      return data.url;
+      handleImage(data.url);
     } catch (error) {
       console.error("Error uploading image:", error);
-    } finally {
-      socket.emit("add loading", false);
     }
   };
 
   const handleChange = async (e) => {
     const name = e.target.name;
     if (name === "image") {
-      const url = await getImageUrl(e);
-      handleImage(url);
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const localUrl = URL.createObjectURL(file);
+      setUser((prev) => ({ ...prev, image: localUrl }));
+
+      getImageUrl(file);
       return;
     }
 
@@ -101,9 +96,16 @@ const Home = () => {
   const handleImage = (url) => {
     if (url) {
       setUser((prev) => ({ ...prev, image: url }));
-      Cookies.set("drawnguess", JSON.stringify({ ...user, image: url }), {
-        expires: 7,
-      });
+      const existing = Cookies.get("drawnguess");
+      const currentData = existing ? JSON.parse(existing) : user;
+
+      Cookies.set(
+        "drawnguess",
+        JSON.stringify({ ...currentData, image: url }),
+        {
+          expires: 7,
+        },
+      );
     }
   };
 
