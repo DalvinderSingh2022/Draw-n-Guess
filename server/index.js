@@ -4,8 +4,11 @@ const { Server } = require("socket.io");
 const words = require("./config/words");
 require("dotenv");
 
+// Create express app and HTTP server
 const app = express();
 const server = http.createServer(app);
+
+// Initialize socket.io with CORS config
 const io = new Server(server, {
   cors: {
     origin: process.env.ORIGIN,
@@ -15,11 +18,15 @@ const io = new Server(server, {
 
 app.use(express.json());
 
+// In-memory storage for all active rooms
 const rooms = {};
 
 io.on("connection", (socket) => {
   console.log("user connected : " + socket.id);
 
+  /**
+   * Send list of public rooms to client
+   */
   socket.on("get public rooms", () => {
     socket.emit(
       "public rooms",
@@ -27,6 +34,9 @@ io.on("connection", (socket) => {
     );
   });
 
+  /**
+   * Host (create) a new room
+   */
   socket.on(
     "host room",
     (
@@ -43,6 +53,7 @@ io.on("connection", (socket) => {
         return;
       }
 
+      // Prevent duplicate room names
       const exisitngRoom = Object.values(rooms).find(
         (room) => room.roomName == roomName,
       );
@@ -51,11 +62,13 @@ io.on("connection", (socket) => {
         return;
       }
 
+      // Generate unique 4-digit room ID
       let roomId = Math.floor(Math.random() * 9000 + 1000);
       while (rooms[roomId]) {
         roomId = Math.floor(Math.random() * 9000 + 1000);
       }
 
+      // Create room object
       const room = {
         players: [
           {
@@ -80,12 +93,17 @@ io.on("connection", (socket) => {
         id: roomId,
         roomName: roomName || `Room${roomId}`,
       };
+
       rooms[roomId] = room;
 
+      // Join creator to room
       socket.join(roomId);
       socket.roomId = roomId;
+
       socket.emit("joined", room);
       socket.emit("set loading", false);
+
+      // Update public rooms list globally
       if (room.isPublic) {
         io.emit(
           "public rooms",
@@ -95,6 +113,9 @@ io.on("connection", (socket) => {
     },
   );
 
+  /**
+   * Join an existing room
+   */
   socket.on("join room", (roomId, userName, image) => {
     if (!userName) {
       socket.emit("set alert", "userName can not be null");
@@ -111,6 +132,8 @@ io.on("connection", (socket) => {
       socket.emit("set alert", `Room ${roomId} is full`);
     } else {
       socket.emit("set loading", `Joinning Room ${roomId}`);
+
+      // Add player to room
       room.players.push({
         name: userName,
         id: socket.id,
@@ -125,12 +148,14 @@ io.on("connection", (socket) => {
       socket.emit("joined", room);
       socket.emit("set loading", false);
 
+      // Notify all players
       io.in(roomId).emit("update leaderboard", room);
       io.in(roomId).emit(
         "update messages",
         `${userName} Join the room`,
         "event",
       );
+
       if (room.isPublic) {
         io.emit(
           "public rooms",
@@ -140,6 +165,9 @@ io.on("connection", (socket) => {
     }
   });
 
+  /**
+   * Get current room details for this socket
+   */
   socket.on("get room", () => {
     const room = Object.values(rooms).find((room) =>
       room.players.find((player) => player.id === socket.id),
@@ -148,14 +176,19 @@ io.on("connection", (socket) => {
     if (room) io.in(room.id).emit("updated room", room);
   });
 
+  /**
+   * Start the game
+   */
   socket.on("start game", () => {
     const roomId = socket.roomId;
     const room = rooms[roomId];
     if (!room) return;
+
     if (room.players.length < 2) {
       socket.emit("set alert", "atlest 2 players requied to start game");
       return;
     }
+
     room.started = true;
 
     io.in(roomId).emit("updated room", room);
@@ -165,49 +198,64 @@ io.on("connection", (socket) => {
     nextRound(roomId);
   });
 
+  /**
+   * Start next round
+   */
   const nextRound = (roomId) => {
     const room = rooms[roomId];
 
-    if (room) {
-      if (room.round >= room.maxRounds) {
-        io.in(roomId).emit("game over", room);
-      } else {
-        room.round = room.round + 1;
-        room.turnIndex = 0;
-        room.timer = 5;
-        room.currentWord = "";
-        io.to(roomId).emit("new word", room, false);
-        const callback = () =>
-          io
-            .in(roomId)
-            .emit("set timer", room.timer, `Starting Round ${room.round}`);
-        if (room.isPublic) {
-          io.emit(
-            "public rooms",
-            Object.values(rooms).filter((room) => room.isPublic),
-          );
-        }
+    if (!room) return;
 
-        updatingTimer(room, callback);
-        io.in(roomId).emit(
-          "update messages",
-          `Round ${room.round} started`,
-          "event",
-        );
-      }
+    // End game if max rounds reached
+    if (room.round >= room.maxRounds) {
+      io.in(roomId).emit("game over", room);
+      return;
     }
+
+    room.round++;
+    room.turnIndex = 0;
+    room.timer = 5; // countdown before turn starts
+    room.currentWord = "";
+
+    io.to(roomId).emit("new word", room, false);
+
+    // Timer update callback
+    const callback = () =>
+      io
+        .in(roomId)
+        .emit("set timer", room.timer, `Starting Round ${room.round}`);
+    if (room.isPublic) {
+      io.emit(
+        "public rooms",
+        Object.values(rooms).filter((room) => room.isPublic),
+      );
+    }
+    updatingTimer(room, callback);
+
+    io.in(roomId).emit(
+      "update messages",
+      `Round ${room.round} started`,
+      "event",
+    );
   };
 
+  /**
+   * Move to next player's turn
+   */
   const nextTurn = (roomId) => {
     const room = rooms[roomId];
 
+    // Score previous drawer
     if (room.players[room.turnIndex - 1]) {
       const players = room.players;
       const drawer = players[room.turnIndex - 1];
+
       const guesses = players.reduce(
-        (acc, player) => (player.guessed === true ? acc + 1 : acc),
+        (acc, player) => (player.guessed ? acc + 1 : acc),
         -1,
       );
+      // start from -1 for drawer guessed is true
+
       drawer.score += 15 * guesses + (guesses === players.length - 1 ? 20 : 0);
 
       if (guesses > 0) {
@@ -220,65 +268,75 @@ io.on("connection", (socket) => {
       io.in(roomId).emit("update leaderboard", room);
     }
 
-    if (room) {
-      if (!room.players[room.turnIndex]?.id) {
-        nextRound(roomId);
-      } else {
-        room.currentWord = words[Math.floor(Math.random() * words.length)];
-        room.players.forEach((player) => (player.guessed = false));
-        room.turnIndex = room.turnIndex + 1;
-        room.timer = 5 + room.drawTime;
-        const drawer = room.players[room.turnIndex - 1];
-        drawer.guessed = true;
+    if (!room) return;
 
-        const callback = () => {
-          io.to(roomId)
-            .except(drawer.id)
+    // If no more players → next round
+    if (!room.players[room.turnIndex]?.id) {
+      nextRound(roomId);
+      return;
+    }
+
+    // Setup next turn
+    room.currentWord = words[Math.floor(Math.random() * words.length)];
+    room.players.forEach((p) => (p.guessed = false));
+
+    room.turnIndex++;
+    room.timer = 5 + room.drawTime;
+
+    const drawer = room.players[room.turnIndex - 1];
+    drawer.guessed = true; // drawer can't guess
+
+    /**
+     * Timer update logic for turn
+     */
+    const callback = () => {
+      io.to(roomId)
+        .except(drawer.id)
+        .emit(
+          "set timer",
+          room.timer - room.drawTime,
+          `${drawer.name} is choosing word`,
+        );
+      drawer.id === socket.id
+        ? socket.emit(
+            "set timer",
+            room.timer - room.drawTime,
+            `You have to draw ${room.currentWord}`,
+          )
+        : socket
+            .to(drawer.id)
             .emit(
               "set timer",
               room.timer - room.drawTime,
-              `${drawer?.name} is choosing word to draw`,
+              `You have to draw ${room.currentWord}`,
             );
-          drawer.id === socket.id
-            ? socket.emit(
-                "set timer",
-                room.timer - room.drawTime,
-                `You have to draw ${room.currentWord}`,
-              )
-            : socket
-                .to(drawer.id)
-                .emit(
-                  "set timer",
-                  room.timer - room.drawTime,
-                  `You have to draw ${room.currentWord}`,
-                );
 
-          io.in(roomId).emit("set clock", room.timer);
-        };
+      io.in(roomId).emit("set clock", room.timer);
+    };
 
-        io.in(roomId).emit("update leaderboard", room);
-        io.in(roomId).emit("updated room", room);
-        io.to(roomId).except(drawer.id).emit("new word", room, false);
-        drawer.id === socket.id
-          ? socket.emit("new word", room, true)
-          : socket.to(drawer.id).emit("new word", room, true);
+    // Notify players
+    io.in(roomId).emit("update leaderboard", room);
+    io.in(roomId).emit("updated room", room);
 
-        updatingTimer(room, callback);
-        io.in(roomId).emit(
-          "update messages",
-          `${drawer.name} is drawing`,
-          "event",
-        );
-      }
-    }
+    io.to(roomId).except(drawer.id).emit("new word", room, false);
+    drawer.id === socket.id
+      ? socket.emit("new word", room, true)
+      : socket.to(drawer.id).emit("new word", room, true);
+
+    updatingTimer(room, callback);
+
+    io.in(roomId).emit("update messages", `${drawer.name} is drawing`, "event");
   };
 
+  /**
+   * Generic timer handler used for rounds & turns
+   */
   const updatingTimer = (room, callback) => {
     callback();
 
     const intervalId = setInterval(() => {
       if (room.timer > 0) {
-        room.timer = room.timer - 1;
+        room.timer--;
         callback();
       } else {
         clearInterval(intervalId);
@@ -287,6 +345,9 @@ io.on("connection", (socket) => {
     }, 1000);
   };
 
+  /**
+   * Drawing events (real-time sync)
+   */
   socket.on("change canvas", (canvasImage) => {
     socket.to(socket.roomId).emit("new canvas", canvasImage);
   });
@@ -295,46 +356,61 @@ io.on("connection", (socket) => {
     socket.to(socket.roomId).emit("draw-line", data);
   });
 
+  /**
+   * Handle chat messages & guessing logic
+   */
   socket.on("new message", (message) => {
     const roomId = socket.roomId;
     const room = rooms[roomId];
     if (!room) return;
+
     const player = room.players.find((player) => player.id === socket.id);
     const drawer = room.players[room.turnIndex - 1];
 
+    // If message is NOT correct guess → normal chat
     if (
       !message
         .toLowerCase()
         .replaceAll(" ", "")
         .includes(room.currentWord.toLowerCase().replaceAll(" ", ""))
     ) {
-      socket.to(roomId).emit("update messages", message, "others", player.name);
+      socket
+        .to(room.id)
+        .emit("update messages", message, "others", player.name);
       socket.emit("update messages", message, "you");
       return;
     }
 
+    // Validation checks
     if (player.id === drawer.id) {
-      socket.emit("update messages", "You can't write word in chat", "alert");
-    } else if (player.guessed) {
-      socket.emit("update messages", "You have already guessed", "alert");
-    } else {
-      const score = room.timer;
-      player.score += score;
-      player.guessed = true;
+      socket.emit("update messages", "You can't write word", "alert");
+      return;
+    }
 
-      io.in(roomId).emit(
-        "update messages",
-        `${player.name} have guessed word +${score}`,
-        "points",
-      );
-      io.in(roomId).emit("update leaderboard", room);
-      player.id === socket.id
-        ? socket.emit("new word", room, true)
-        : socket.to(player.id).emit("new word", room, true);
+    if (player.guessed) {
+      socket.emit("update messages", "Already guessed", "alert");
+      return;
+    }
 
-      if (room.players.every((player) => player.guessed == true)) {
-        room.timer = 0;
-      }
+    // Correct guess → award points
+    const score = room.timer;
+    player.score += score;
+    player.guessed = true;
+
+    io.in(room.id).emit(
+      "update messages",
+      `${player.name} guessed +${score}`,
+      "points",
+    );
+
+    io.in(room.id).emit("update leaderboard", room);
+    player.id === socket.id
+      ? socket.emit("new word", room, true)
+      : socket.to(player.id).emit("new word", room, true);
+
+    // End turn early if all guessed
+    if (room.players.every((player) => player.guessed == true)) {
+      room.timer = 0;
     }
   });
 
@@ -342,6 +418,9 @@ io.on("connection", (socket) => {
     socket.emit("set loading", loadingMsg);
   });
 
+  /**
+   * Leave room manually
+   */
   const leaveRoom = (room, playerLeft) => {
     const roomId = room.id;
     const drawer = room.players?.[room.turnIndex - 1];
@@ -393,15 +472,15 @@ io.on("connection", (socket) => {
   socket.on("leave room", () => {
     const roomId = socket.roomId;
     const room = rooms[roomId];
-    if (room) {
-      const playerLeft = room.players.find((player) => player.id === socket.id);
+    if (!room) return;
 
-      if (playerLeft) {
-        leaveRoom(room, playerLeft);
-      }
-    }
+    const playerLeft = room.players.find((player) => player.id === socket.id);
+    if (playerLeft) leaveRoom(room, playerLeft);
   });
 
+  /**
+   * Cleanup on disconnect
+   */
   socket.on("disconnect", () => {
     console.log("disconnected : " + socket.id);
 
@@ -416,5 +495,8 @@ io.on("connection", (socket) => {
   });
 });
 
+/**
+ * Start server
+ */
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
