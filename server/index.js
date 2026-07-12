@@ -421,8 +421,8 @@ io.on("connection", (socket) => {
   /**
    * Leave room manually
    */
-  const leaveRoom = (room, playerLeft) => {
-    const roomId = room.id;
+  const leaveRoom = (roomId, playerLeft) => {
+    const room = rooms[roomId];
     const drawer = room.players?.[room.turnIndex - 1];
     room.players = room.players.filter((player) => player.id !== playerLeft.id);
 
@@ -475,7 +475,7 @@ io.on("connection", (socket) => {
     if (!room) return;
 
     const playerLeft = room.players.find((player) => player.id === socket.id);
-    if (playerLeft) leaveRoom(room, playerLeft);
+    if (playerLeft) leaveRoom(roomId, playerLeft);
   });
 
   /**
@@ -485,11 +485,15 @@ io.on("connection", (socket) => {
     console.log("disconnected : " + socket.id);
 
     for (const room of Object.values(rooms)) {
-      const playerLeft = room.players.find((player) => player.id === socket.id);
+      if (room.id) {
+        const playerLeft = room.players.find(
+          (player) => player.id === socket.id,
+        );
 
-      if (playerLeft) {
-        leaveRoom(room, playerLeft);
-        break;
+        if (playerLeft) {
+          leaveRoom(room.id, playerLeft);
+          break;
+        }
       }
     }
   });
