@@ -8,17 +8,18 @@ const NavBar = () => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    socket.on("updated room", (room) => {
-      setRoom(room);
-    });
-    socket.on("new word", (room, show) => {
+    const handleUpdatedRoom = (room) => setRoom(room);
+    const handleNewWord = (room, show) => {
       setRoom(room);
       setShow(show);
-    });
+    };
+
+    socket.on("updated room", handleUpdatedRoom);
+    socket.on("new word", handleNewWord);
 
     return () => {
-      socket.off("updated room");
-      socket.off("new word");
+      socket.off("updated room", handleUpdatedRoom);
+      socket.off("new word", handleNewWord);
     };
   }, [setRoom]);
 
@@ -35,6 +36,7 @@ const NavBar = () => {
       });
   };
 
+  console.log(room);
   return (
     <nav
       className={`${room?.currentWord ? "py-2" : "py-6"} px-2 mdpx-6 text-center relative  text-3xl font-bold m-auto primary`}
@@ -54,13 +56,13 @@ const NavBar = () => {
           </span>
         </div>
       ) : room ? (
-        <span
+        <button
           onClick={copyRoomId}
           className="flex m-auto justify-center cursor-pointer"
         >
           {`${room?.roomName} (${room?.id})`}
           <FaCopy className="text-base my-auto" />
-        </span>
+        </button>
       ) : (
         "Draw 'n Guess"
       )}

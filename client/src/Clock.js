@@ -5,11 +5,11 @@ const Clock = () => {
   const [time, setTimer] = useState(null);
 
   useEffect(() => {
-    socket.on("set clock", (time) => {
-      setTimer(time);
-    });
+    const handleTimer = (time) => setTimer(time);
 
-    return () => socket.off("set clock");
+    socket.on("set clock", handleTimer);
+
+    return () => socket.off("set clock", handleTimer);
   }, []);
 
   if (time >= 0) {

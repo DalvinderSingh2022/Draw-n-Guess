@@ -4,6 +4,7 @@ import Messages from "./Messages";
 import LeaderBoard from "./LeaderBoard";
 import Timer from "./Timer";
 import Gameover from "./Gameover";
+import WordChoice from "./WordChoice";
 import { socket } from "./hooks/useGame";
 
 const Room = () => {
@@ -20,6 +21,7 @@ const Room = () => {
         <div className="w-full flex p-2 gap-4 flex-col md:flex-row">
           <LeaderBoard />
           <Messages />
+          <WordChoice /> 
         </div>
         <div className="flex items-center py-4">
           <button

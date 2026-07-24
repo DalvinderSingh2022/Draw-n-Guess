@@ -177,13 +177,15 @@ const Canvas = () => {
   );
 
   useEffect(() => {
-    socket.emit("get room");
-    socket.on("updated room", (room) => {
+    const handleUpdatedRoom = (room) => {
       setRoom(room);
-      setTurn(room.players[room.turnIndex - 1]?.id === socket.id);
-    });
+      setTurn(room.drawerId === socket.id && !room.choosing);
+    };
 
-    return () => socket.off("updated room");
+    socket.emit("get room");
+    socket.on("updated room", handleUpdatedRoom);
+
+    return () => socket.off("updated room", handleUpdatedRoom);
   }, [setRoom]);
 
   useEffect(() => {
@@ -217,10 +219,22 @@ const Canvas = () => {
       }
     };
 
-    socket.on("draw-line", handleDrawLine);
-    socket.on("new canvas", (canvasImage) => {
+    const handleNewCanvas = (canvasImage) => {
       if (!turn) changeCanvas(canvasImage);
-    });
+    };
+
+    const handleClearCanvas = () => {
+      const ctx = contextRef.current;
+      ctx.fillStyle = "white";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawingRecordRef.current = [canvas.toDataURL("image/jpeg", 0.5)];
+      drawingIndexRef.current = 0;
+    };
+
+    socket.on("draw-line", handleDrawLine);
+    socket.on("new canvas", handleNewCanvas);
+    socket.on("clear canvas", handleClearCanvas);
 
     if (turn) {
       canvas.addEventListener("mousedown", startDrawing);
@@ -230,8 +244,9 @@ const Canvas = () => {
     }
 
     return () => {
-      socket.off("draw-line");
-      socket.off("new canvas");
+      socket.off("draw-line", handleDrawLine);
+      socket.off("new canvas", handleNewCanvas);
+      socket.off("clear canvas", handleClearCanvas);
       canvas.removeEventListener("mousedown", startDrawing);
       canvas.removeEventListener("mousemove", drawing);
       canvas.removeEventListener("mouseup", stopDrawing);

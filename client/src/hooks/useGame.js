@@ -7,14 +7,15 @@ export const useGame = () => {
   const [room, setRoom] = useState(null);
 
   useEffect(() => {
-    const handleUpdate = (updatedRoom) => setRoom(updatedRoom);
+    const handleJoined = (updatedRoom) => setRoom(updatedRoom);
+    const handleLeaved = () => setRoom(null);
 
-    socket.on("joined", handleUpdate);
-    socket.on("leaved", () => handleUpdate(null));
+    socket.on("joined", handleJoined);
+    socket.on("leaved", handleLeaved);
 
     return () => {
-      socket.off("joined");
-      socket.off("leaved");
+      socket.off("joined", handleJoined);
+      socket.off("leaved", handleLeaved);
     };
   }, []);
 

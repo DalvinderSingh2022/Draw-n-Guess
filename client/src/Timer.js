@@ -5,12 +5,12 @@ const Timer = () => {
   const [timer, setTimer] = useState({});
 
   useEffect(() => {
-    socket.on("set timer", (time, message) => {
-      setTimer({ time, message });
-    });
+    const handleSetTimer = (time, message) => setTimer({ time, message });
 
-    return () => socket.off("set timer");
-  }, [timer]);
+    socket.on("set timer", handleSetTimer);
+
+    return () => socket.off("set timer", handleSetTimer);
+  }, []);
 
   return timer?.time >= 0 ? (
     <div className="fixed_container justify-center backdrop-blur-lg bg-blue-200/20">

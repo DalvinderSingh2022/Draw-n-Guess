@@ -6,6 +6,7 @@ const Waittingroom = () => {
   const { room, setRoom } = useGame();
   const waiting = !room?.started;
 
+
   const startGame = () => {
     socket.emit("add loading", `Setting Up room`);
     socket.emit("start game");
@@ -17,12 +18,12 @@ const Waittingroom = () => {
   };
 
   useEffect(() => {
-    socket.emit("get room");
-    socket.on("updated room", (room) => {
-      setRoom(room);
-    });
+    const handleUpdatedRoom = (room) => setRoom(room);
 
-    return () => socket.off("updated room");
+    socket.emit("get room");
+    socket.on("updated room", handleUpdatedRoom);
+
+    return () => socket.off("updated room", handleUpdatedRoom);
   }, [setRoom]);
 
   const inviteWhatsApp = () => {

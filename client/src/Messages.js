@@ -16,6 +16,16 @@ const Messages = () => {
   const messagesRef = useRef(null);
 
   useEffect(() => {
+    const handleUpdateMessages = (text, type, sender) => {
+      setMessages((prev) => [...prev, { text, sender, type }]);
+    };
+
+    socket.on("update messages", handleUpdateMessages);
+
+    return () => socket.off("update messages", handleUpdateMessages);
+  }, []);
+
+  useEffect(() => {
     if (messagesRef.current) {
       setTimeout(
         () =>
@@ -23,12 +33,6 @@ const Messages = () => {
         0,
       );
     }
-
-    socket.on("update messages", (text, type, sender) => {
-      setMessages((prev) => [...prev, { text, sender, type }]);
-    });
-
-    return () => socket.off("update messages");
   }, [messages]);
 
   const handleSubmit = (event) => {
